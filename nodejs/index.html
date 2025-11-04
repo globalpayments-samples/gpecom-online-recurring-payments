@@ -146,36 +146,132 @@ app.post('/webhook', (req, res) => {
                     <div class="gp-card-header">
                         <h2 class="gp-card-title">Recurring Payments</h2>
                         <p class="gp-card-description">
-                            Set up subscription billing and recurring payment schedules.
+                            Set up subscription billing and recurring payment schedules using Global Payments XML API Payment Scheduler.
                         </p>
                     </div>
-                    
+
                     <form id="recurring-form" class="gp-form">
-                        <div class="gp-form-row">
-                            <div class="gp-form-group">
-                                <label for="subscription-amount" class="gp-label">Monthly Amount ($):</label>
-                                <input type="number" id="subscription-amount" name="subscription-amount" class="gp-input" min="1.00" step="0.01" value="29.99" required>
+                        <!-- Customer Information Section -->
+                        <div style="margin-bottom: 24px;">
+                            <h3 class="gp-card-title" style="font-size: 18px; margin-bottom: 12px;">Customer Information</h3>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="recurring-first-name" class="gp-label">First Name:</label>
+                                    <input type="text" id="recurring-first-name" name="first_name" class="gp-input" placeholder="John" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="recurring-last-name" class="gp-label">Last Name:</label>
+                                    <input type="text" id="recurring-last-name" name="last_name" class="gp-input" placeholder="Doe" required>
+                                </div>
                             </div>
-                            
-                            <div class="gp-form-group">
-                                <label for="billing-cycle" class="gp-label">Billing Cycle:</label>
-                                <select id="billing-cycle" name="billing-cycle" class="gp-select" required>
-                                    <option value="monthly">Monthly</option>
-                                    <option value="quarterly">Quarterly</option>
-                                    <option value="annually">Annually</option>
-                                </select>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="recurring-email" class="gp-label">Email:</label>
+                                    <input type="email" id="recurring-email" name="email" class="gp-input" placeholder="john.doe@example.com" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="recurring-phone" class="gp-label">Phone:</label>
+                                    <input type="tel" id="recurring-phone" name="phone" class="gp-input" placeholder="555-123-4567">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="gp-form-group">
-                            <label class="gp-label">Payment Method:</label>
-                            <div id="credit-card-recurring"></div>
+                        <!-- Billing Address Section -->
+                        <div style="margin-bottom: 24px;">
+                            <h3 class="gp-card-title" style="font-size: 18px; margin-bottom: 12px;">Billing Address</h3>
+
+                            <div class="gp-form-group">
+                                <label for="recurring-street-address" class="gp-label">Street Address:</label>
+                                <input type="text" id="recurring-street-address" name="street_address" class="gp-input" placeholder="1 Example Way">
+                            </div>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="recurring-city" class="gp-label">City:</label>
+                                    <input type="text" id="recurring-city" name="city" class="gp-input" placeholder="Jeffersonville">
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="recurring-state" class="gp-label">State:</label>
+                                    <input type="text" id="recurring-state" name="state" class="gp-input" placeholder="IN" maxlength="2">
+                                </div>
+                            </div>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="recurring-billing-zip" class="gp-label">Zip Code:</label>
+                                    <input type="text" id="recurring-billing-zip" name="billing_zip" class="gp-input" placeholder="47130" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="recurring-country" class="gp-label">Country:</label>
+                                    <select id="recurring-country" name="country" class="gp-select" required>
+                                        <option value="US" selected>United States</option>
+                                        <option value="CA">Canada</option>
+                                        <option value="GB">United Kingdom</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subscription Details Section -->
+                        <div style="margin-bottom: 24px;">
+                            <h3 class="gp-card-title" style="font-size: 18px; margin-bottom: 12px;">Subscription Details</h3>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="subscription-amount" class="gp-label">Amount ($):</label>
+                                    <input type="number" id="subscription-amount" name="amount" class="gp-input" min="1.00" step="0.01" value="29.99" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="billing-cycle" class="gp-label">Billing Frequency:</label>
+                                    <select id="billing-cycle" name="frequency" class="gp-select" required>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="bi-weekly">Bi-Weekly (Every 2 weeks)</option>
+                                        <option value="monthly" selected>Monthly</option>
+                                        <option value="quarterly">Quarterly (Every 3 months)</option>
+                                        <option value="yearly">Yearly (Annually)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="gp-form-group">
+                                <label for="start-date" class="gp-label">Start Date:</label>
+                                <input type="date" id="start-date" name="start_date" class="gp-input" required>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method Section -->
+                        <div style="margin-bottom: 24px;">
+                            <h3 class="gp-card-title" style="font-size: 18px; margin-bottom: 12px;">Payment Method</h3>
+
+                            <div class="gp-alert gp-alert-info" style="margin-bottom: 16px;">
+                                <strong>Note:</strong> An initial payment will be processed to validate your payment method. The recurring schedule will start on your selected start date.
+                            </div>
+
+                            <div class="gp-form-group">
+                                <label class="gp-label">Credit Card Information:</label>
+                                <div id="credit-card-recurring"></div>
+                            </div>
                         </div>
 
                         <button type="submit" class="gp-button gp-button-primary gp-button-full">
-                            Set Up Subscription
+                            Set Up Recurring Payment
                         </button>
                     </form>
+
+                    <!-- Result Display -->
+                    <div id="recurring-result" class="gp-hidden" style="margin-top: 24px;">
+                        <div class="gp-alert gp-alert-success">
+                            <h3 class="gp-card-title" style="margin-top: 0;">Recurring Payment Schedule Created!</h3>
+                            <div id="recurring-result-details"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -208,6 +304,6 @@ app.post('/webhook', (req, res) => {
         </div>
     </footer>
 
-    <script src="https://globalpayments-samples.github.io/js/script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
