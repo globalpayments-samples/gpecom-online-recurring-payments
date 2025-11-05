@@ -105,7 +105,7 @@ export function generateStoredCardPaymentHash(params, sharedSecret) {
 }
 
 /**
- * Generate authentication hash for card storage operations
+ * Generate authentication hash for card storage operations (payer-new, payer-edit)
  * Hash blueprint: timestamp.merchantid.orderid.amount.currency.payerref
  *
  * @param {Object} params - Request parameters
@@ -121,6 +121,28 @@ export function generateStoredCardPaymentHash(params, sharedSecret) {
 export function generateCardStorageHash(params, sharedSecret) {
     const { timestamp, merchantId, orderId, amount = '', currency = '', payerRef } = params;
     const dataString = `${timestamp}.${merchantId}.${orderId}.${amount}.${currency}.${payerRef}`;
+    return generateSHA1Hash(dataString, sharedSecret);
+}
+
+/**
+ * Generate authentication hash for card-new operation
+ * Hash blueprint: timestamp.merchantid.orderid.amount.currency.payerref.chname.cardnumber
+ *
+ * @param {Object} params - Request parameters
+ * @param {string} params.timestamp - Request timestamp
+ * @param {string} params.merchantId - Merchant ID
+ * @param {string} params.orderId - Order ID
+ * @param {string} params.amount - Amount (empty string for card-new)
+ * @param {string} params.currency - Currency (empty string for card-new)
+ * @param {string} params.payerRef - Customer/payer reference
+ * @param {string} params.chname - Cardholder name
+ * @param {string} params.cardNumber - Card number
+ * @param {string} sharedSecret - Merchant shared secret
+ * @returns {string} Authentication hash
+ */
+export function generateCardNewHash(params, sharedSecret) {
+    const { timestamp, merchantId, orderId, amount = '', currency = '', payerRef, chname, cardNumber } = params;
+    const dataString = `${timestamp}.${merchantId}.${orderId}.${amount}.${currency}.${payerRef}.${chname}.${cardNumber}`;
     return generateSHA1Hash(dataString, sharedSecret);
 }
 
