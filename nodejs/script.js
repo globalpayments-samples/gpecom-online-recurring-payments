@@ -24,8 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTabs();
 
     // Initialize forms
-    initializePaymentForm();
-    initializeTokenizationForm();
+    initializeHPPPaymentForm();
     initializeRecurringForm();
 
     // Set default start date to tomorrow
@@ -71,60 +70,54 @@ function setDefaultStartDate() {
 }
 
 /**
- * Initialize one-time payment form
+ * Initialize Hosted Payment Page (HPP) form
  */
-function initializePaymentForm() {
+function initializeHPPPaymentForm() {
     const form = document.getElementById('payment-form');
     if (!form) return;
-
-    // Create credit card form (simplified - in production use XML API tokenization)
-    createSimplifiedCardForm('credit-card');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         try {
-            showLoading(true, 'Processing payment...');
+            showLoading(true, 'Preparing payment page...');
 
             // Get form data
             const formData = new FormData(form);
 
-            // Get card data (in production, this would be tokenized)
-            const cardData = getCardData('credit-card');
-
-            // For this example, we'll use a mock token
-            // In production, card data would be tokenized client-side before sending
-            const paymentToken = `TOKEN_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-            // Prepare payment data
-            const paymentData = {
-                payment_token: paymentToken,
+            // Prepare HPP request data
+            const hppRequestData = {
                 amount: parseFloat(formData.get('amount')),
-                currency: 'USD',
-                billing_zip: formData.get('billing_zip'),
-                is_recurring: false
+                currency: formData.get('currency'),
+                customer_email: formData.get('customer_email'),
+                billing_street1: formData.get('billing_street1'),
+                billing_city: formData.get('billing_city'),
+                billing_postalcode: formData.get('billing_postalcode'),
+                billing_country: formData.get('billing_country')
             };
 
-            // Send to backend
-            const response = await fetch(`${API_BASE}/process-payment`, {
+            // Get HPP request JSON from server
+            const response = await fetch(`${API_BASE}/hpp-request`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(paymentData)
+                body: JSON.stringify(hppRequestData)
             });
 
             const result = await response.json();
 
-            if (result.success) {
-                showSuccess('Payment processed successfully!', result.data);
-            } else {
-                showError(result.message || 'Payment failed');
+            if (!result.success) {
+                showError(result.message || 'Failed to generate payment request');
+                return;
             }
 
+            // Build and submit HPP form
+            openHPPInIframe(result.data);
+
         } catch (error) {
-            console.error('Payment error:', error);
-            showError(`Payment error: ${error.message}`);
+            console.error('HPP initialization error:', error);
+            showError(`Error: ${error.message}`);
         } finally {
             showLoading(false);
         }
@@ -132,51 +125,72 @@ function initializePaymentForm() {
 }
 
 /**
- * Initialize tokenization form
+ * Open HPP in iframe
  */
-function initializeTokenizationForm() {
-    const form = document.getElementById('tokenization-form');
-    if (!form) return;
+function openHPPInIframe(hppData) {
+    const hppUrl = 'https://pay.sandbox.realexpayments.com/pay';
 
-    // Create credit card form for tokenization
-    createSimplifiedCardForm('credit-card-token');
+    // Create form dynamically
+    const formHtml = `
+        <form id="hpp-form" action="${hppUrl}" method="POST" target="hpp-iframe">
+            ${Object.entries(hppData).map(([key, value]) =>
+                `<input type="hidden" name="${key}" value="${value}">`
+            ).join('\n')}
+        </form>
+    `;
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    // Insert form into document
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = formHtml;
+    document.body.appendChild(tempDiv);
 
-        try {
-            showLoading(true, 'Generating token...');
+    // Show iframe container
+    const hppContainer = document.getElementById('hpp-container');
+    const paymentForm = document.getElementById('payment-form');
 
-            // Get card data
-            const cardData = getCardData('credit-card-token');
+    hppContainer.style.display = 'block';
+    paymentForm.style.display = 'none';
 
-            // Generate mock token (in production, this would call XML API tokenization)
-            const token = `PMT_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    // Submit form to iframe
+    const hppForm = document.getElementById('hpp-form');
+    hppForm.submit();
 
-            // Display token
-            const tokenResult = document.getElementById('token-result');
-            const tokenDisplay = document.getElementById('token-display');
+    // Remove form after submission
+    setTimeout(() => {
+        document.body.removeChild(tempDiv);
+    }, 100);
 
-            tokenDisplay.textContent = JSON.stringify({
-                token: token,
-                card_type: cardData.type,
-                last4: cardData.number.slice(-4),
-                expires: `${cardData.expiry_month}/${cardData.expiry_year}`
-            }, null, 2);
+    // Listen for iframe messages (if HPP sends postMessage)
+    window.addEventListener('message', function(event) {
+        // Verify origin
+        if (event.origin !== 'https://pay.sandbox.realexpayments.com') {
+            return;
+        }
 
-            tokenResult.classList.remove('gp-hidden');
+        console.log('HPP Message received:', event.data);
 
-        } catch (error) {
-            console.error('Tokenization error:', error);
-            showError(`Tokenization error: ${error.message}`);
-        } finally {
-            showLoading(false);
+        // Handle completion (reset form display)
+        if (event.data.RESULT) {
+            setTimeout(() => {
+                hppContainer.style.display = 'none';
+                paymentForm.style.display = 'block';
+
+                if (event.data.RESULT === '00') {
+                    showSuccess('Payment completed successfully!', {
+                        orderId: event.data.ORDER_ID,
+                        transactionId: event.data.PASREF
+                    });
+                }
+            }, 2000);
         }
     });
 }
+
 
 /**
  * Initialize recurring payment form
+ * Note: Recurring payments still use the backend API with card details
+ * since HPP doesn't support the complete recurring setup workflow (customer creation, card storage, schedule creation)
  */
 function initializeRecurringForm() {
     const form = document.getElementById('recurring-form');
@@ -197,34 +211,39 @@ function initializeRecurringForm() {
             // Get card data (in production, this would be tokenized)
             const cardData = getCardData('credit-card-recurring');
 
-            // For this example, we'll use a mock token
-            const paymentToken = `TOKEN_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-            // Prepare recurring payment data
+            // Prepare recurring payment data with card details
             const recurringData = {
-                payment_token: paymentToken,
+                cardDetails: cardData,
                 amount: parseFloat(formData.get('amount')),
                 currency: 'USD',
-                is_recurring: true,
                 frequency: formData.get('frequency'),
-                start_date: formData.get('start_date'),
+                startDate: formData.get('start_date'),
                 // Customer information
-                first_name: formData.get('first_name'),
-                last_name: formData.get('last_name'),
-                email: formData.get('email'),
-                phone: formData.get('phone'),
+                customerData: {
+                    first_name: formData.get('first_name'),
+                    last_name: formData.get('last_name'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    street_address: formData.get('street_address'),
+                    city: formData.get('city'),
+                    state: formData.get('state'),
+                    billing_zip: formData.get('billing_zip'),
+                    country: formData.get('country')
+                },
                 // Billing address
-                street_address: formData.get('street_address'),
-                city: formData.get('city'),
-                state: formData.get('state'),
-                billing_zip: formData.get('billing_zip'),
-                country: formData.get('country')
+                billingData: {
+                    street_address: formData.get('street_address'),
+                    city: formData.get('city'),
+                    state: formData.get('state'),
+                    billing_zip: formData.get('billing_zip'),
+                    country: formData.get('country')
+                }
             };
 
-            console.log('Submitting recurring payment:', recurringData);
+            console.log('Submitting recurring payment setup...');
 
-            // Send to backend
-            const response = await fetch(`${API_BASE}/process-payment`, {
+            // Send to backend - use the processRecurringPaymentSetup endpoint
+            const response = await fetch(`${API_BASE}/recurring-setup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

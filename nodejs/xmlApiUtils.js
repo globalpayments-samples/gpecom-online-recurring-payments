@@ -147,6 +147,46 @@ export function generateCardNewHash(params, sharedSecret) {
 }
 
 /**
+ * Generate authentication hash for Hosted Payment Page (HPP) requests
+ * Hash blueprint: timestamp.merchantid.orderid.amount.currency
+ *
+ * @param {Object} params - Request parameters
+ * @param {string} params.timestamp - Request timestamp
+ * @param {string} params.merchantId - Merchant ID
+ * @param {string} params.orderId - Order ID
+ * @param {string} params.amount - Amount in smallest currency unit
+ * @param {string} params.currency - Currency code
+ * @param {string} sharedSecret - Merchant shared secret
+ * @returns {string} Authentication hash
+ */
+export function generateHPPHash(params, sharedSecret) {
+    const { timestamp, merchantId, orderId, amount, currency } = params;
+    const dataString = `${timestamp}.${merchantId}.${orderId}.${amount}.${currency}`;
+    return generateSHA1Hash(dataString, sharedSecret);
+}
+
+/**
+ * Generate authentication hash for HPP response verification
+ * Hash blueprint: timestamp.merchantid.orderid.result.message.pasref.authcode
+ *
+ * @param {Object} params - Response parameters
+ * @param {string} params.timestamp - Response timestamp
+ * @param {string} params.merchantId - Merchant ID
+ * @param {string} params.orderId - Order ID
+ * @param {string} params.result - Result code
+ * @param {string} params.message - Response message
+ * @param {string} params.pasref - Payment reference
+ * @param {string} params.authcode - Authorization code (empty string if not present)
+ * @param {string} sharedSecret - Merchant shared secret
+ * @returns {string} Authentication hash
+ */
+export function generateHPPResponseHash(params, sharedSecret) {
+    const { timestamp, merchantId, orderId, result, message, pasref, authcode = '' } = params;
+    const dataString = `${timestamp}.${merchantId}.${orderId}.${result}.${message}.${pasref}.${authcode}`;
+    return generateSHA1Hash(dataString, sharedSecret);
+}
+
+/**
  * Generate authentication hash for Payment Scheduler operations
  * Hash blueprint: timestamp.merchantid.scheduleref.amount.currency.payerref.schedule
  *

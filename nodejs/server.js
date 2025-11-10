@@ -16,6 +16,13 @@ import {
     processOneTimePayment,
     processRecurringPaymentSetup
 } from './paymentUtils.js';
+import {
+    generateTimestamp,
+    generateOrderId,
+    generateHPPHash,
+    generateHPPResponseHash,
+    convertToCents
+} from './xmlApiUtils.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -121,6 +128,248 @@ app.get('/config', async (req, res) => {
     } catch (error) {
         console.error('Config error:', error.message);
         sendErrorResponse(res, 500, `Error loading configuration: ${error.message}`, 'CONFIG_ERROR');
+    }
+});
+
+/**
+ * Generate HPP request endpoint
+ * Creates the JSON request for the Hosted Payment Page
+ *
+ * Request body parameters:
+ * - amount (number, required): Payment amount in dollars
+ * - currency (string, optional): Currency code (default: 'USD')
+ * - customer_email (string, optional): Customer email
+ * - customer_phone (string, optional): Customer phone
+ * - billing_* (string, optional): Billing address fields
+ * - shipping_* (string, optional): Shipping address fields
+ */
+app.post('/hpp-request', async (req, res) => {
+    try {
+        const config = validateConfig();
+        const {
+            amount,
+            currency = 'USD',
+            customer_email,
+            customer_phone,
+            billing_street1,
+            billing_street2,
+            billing_street3,
+            billing_city,
+            billing_postalcode,
+            billing_country,
+            shipping_street1,
+            shipping_street2,
+            shipping_street3,
+            shipping_city,
+            shipping_state,
+            shipping_postalcode,
+            shipping_country
+        } = req.body;
+
+        // Validate required fields
+        if (!amount || amount <= 0) {
+            return sendErrorResponse(res, 400, 'Valid amount is required', 'INVALID_AMOUNT');
+        }
+
+        // Generate request parameters
+        const timestamp = generateTimestamp();
+        const orderId = generateOrderId('HPP');
+        const amountInCents = convertToCents(amount);
+
+        // Generate hash
+        const hash = generateHPPHash({
+            timestamp,
+            merchantId: config.merchantId,
+            orderId,
+            amount: amountInCents,
+            currency
+        }, config.sharedSecret);
+
+        // Build HPP request JSON
+        const hppRequest = {
+            TIMESTAMP: timestamp,
+            MERCHANT_ID: config.merchantId,
+            ACCOUNT: config.account,
+            ORDER_ID: orderId,
+            AMOUNT: amountInCents,
+            CURRENCY: currency,
+            AUTO_SETTLE_FLAG: '1',
+            HPP_VERSION: '2',
+            HPP_CHANNEL: 'ECOM',
+            MERCHANT_RESPONSE_URL: `${req.protocol}://${req.get('host')}/hpp-response`,
+            SHA1HASH: hash
+        };
+
+        // Add optional customer fields
+        if (customer_email) {
+            hppRequest.HPP_CUSTOMER_EMAIL = customer_email;
+        }
+        if (customer_phone) {
+            hppRequest.HPP_CUSTOMER_PHONENUMBER_MOBILE = customer_phone;
+        }
+
+        // Add billing address fields
+        if (billing_street1) hppRequest.HPP_BILLING_STREET1 = billing_street1;
+        if (billing_street2) hppRequest.HPP_BILLING_STREET2 = billing_street2;
+        if (billing_street3) hppRequest.HPP_BILLING_STREET3 = billing_street3;
+        if (billing_city) hppRequest.HPP_BILLING_CITY = billing_city;
+        if (billing_postalcode) hppRequest.HPP_BILLING_POSTALCODE = billing_postalcode;
+        if (billing_country) hppRequest.HPP_BILLING_COUNTRY = billing_country;
+
+        // Add shipping address fields
+        if (shipping_street1) hppRequest.HPP_SHIPPING_STREET1 = shipping_street1;
+        if (shipping_street2) hppRequest.HPP_SHIPPING_STREET2 = shipping_street2;
+        if (shipping_street3) hppRequest.HPP_SHIPPING_STREET3 = shipping_street3;
+        if (shipping_city) hppRequest.HPP_SHIPPING_CITY = shipping_city;
+        if (shipping_state) hppRequest.HPP_SHIPPING_STATE = shipping_state;
+        if (shipping_postalcode) hppRequest.HPP_SHIPPING_POSTALCODE = shipping_postalcode;
+        if (shipping_country) hppRequest.HPP_SHIPPING_COUNTRY = shipping_country;
+
+        sendSuccessResponse(res, hppRequest, 'HPP request generated successfully');
+
+    } catch (error) {
+        console.error('HPP request generation error:', error.message);
+        sendErrorResponse(res, 500, error.message, 'HPP_REQUEST_ERROR');
+    }
+});
+
+/**
+ * Process HPP response endpoint
+ * Handles the response from the Hosted Payment Page
+ */
+app.post('/hpp-response', async (req, res) => {
+    try {
+        const config = validateConfig();
+        const response = req.body;
+
+        console.log('📥 HPP Response received:', response);
+
+        // Extract response parameters
+        const {
+            TIMESTAMP,
+            MERCHANT_ID,
+            ORDER_ID,
+            RESULT,
+            MESSAGE,
+            PASREF,
+            AUTHCODE = '',
+            SHA1HASH
+        } = response;
+
+        // Verify hash
+        const expectedHash = generateHPPResponseHash({
+            timestamp: TIMESTAMP,
+            merchantId: MERCHANT_ID,
+            orderId: ORDER_ID,
+            result: RESULT,
+            message: MESSAGE,
+            pasref: PASREF,
+            authcode: AUTHCODE
+        }, config.sharedSecret);
+
+        if (expectedHash.toLowerCase() !== SHA1HASH.toLowerCase()) {
+            console.error('❌ HPP Response hash verification failed');
+            return res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head><title>Payment Failed</title></head>
+                <body>
+                    <h1>Payment Verification Failed</h1>
+                    <p>The payment response could not be verified. Please contact support.</p>
+                </body>
+                </html>
+            `);
+        }
+
+        // Check result
+        if (RESULT === '00') {
+            // Success
+            console.log('✅ HPP Payment successful');
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Payment Successful</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+                        .success { color: #28a745; }
+                        .info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1 class="success">✅ Payment Successful</h1>
+                    <div class="info">
+                        <p><strong>Order ID:</strong> ${ORDER_ID}</p>
+                        <p><strong>Transaction ID:</strong> ${PASREF}</p>
+                        <p><strong>Authorization Code:</strong> ${AUTHCODE}</p>
+                        <p><strong>Amount:</strong> ${response.AMOUNT} ${response.CURRENCY}</p>
+                    </div>
+                    <p>${MESSAGE}</p>
+                    <button onclick="window.close()">Close Window</button>
+                </body>
+                </html>
+            `);
+        } else {
+            // Failed
+            console.log('❌ HPP Payment failed:', MESSAGE);
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Payment Failed</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+                        .error { color: #dc3545; }
+                        .info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1 class="error">❌ Payment Failed</h1>
+                    <div class="info">
+                        <p><strong>Order ID:</strong> ${ORDER_ID}</p>
+                        <p><strong>Error Code:</strong> ${RESULT}</p>
+                    </div>
+                    <p>${MESSAGE}</p>
+                    <button onclick="window.close()">Close Window</button>
+                </body>
+                </html>
+            `);
+        }
+
+    } catch (error) {
+        console.error('HPP response processing error:', error.message);
+        res.status(500).send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Error</title></head>
+            <body>
+                <h1>Error Processing Payment Response</h1>
+                <p>${error.message}</p>
+            </body>
+            </html>
+        `);
+    }
+});
+
+/**
+ * Recurring payment setup endpoint
+ * Handles the complete recurring payment setup workflow
+ */
+app.post('/recurring-setup', async (req, res) => {
+    try {
+        const config = validateConfig();
+        const data = req.body;
+
+        console.log('Processing recurring payment setup...');
+
+        // Process complete recurring payment setup
+        const result = await processRecurringPaymentSetup(config, data);
+
+        sendSuccessResponse(res, result, 'Recurring payment setup completed successfully');
+
+    } catch (error) {
+        console.error('Recurring payment setup error:', error.message);
+        sendErrorResponse(res, 500, error.message, 'RECURRING_SETUP_ERROR');
     }
 });
 
