@@ -70,17 +70,21 @@ function setDefaultStartDate() {
 }
 
 /**
- * Initialize Hosted Payment Page (HPP) form
+ * Initialize Hosted Payment Page (HPP) form using RealEx HPP library
  */
 function initializeHPPPaymentForm() {
     const form = document.getElementById('payment-form');
     if (!form) return;
 
+    // Add button ID for RealEx library
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.id = 'pay-button';
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         try {
-            showLoading(true, 'Preparing payment page...');
+            showLoading(true, 'Preparing secure payment page...');
 
             // Get form data
             const formData = new FormData(form);
@@ -106,84 +110,45 @@ function initializeHPPPaymentForm() {
             });
 
             const result = await response.json();
+            showLoading(false);
 
             if (!result.success) {
                 showError(result.message || 'Failed to generate payment request');
                 return;
             }
 
-            // Build and submit HPP form
-            openHPPInIframe(result.data);
+            // Initialize RealEx HPP in lightbox mode
+            openHPPLightbox(result.data);
 
         } catch (error) {
             console.error('HPP initialization error:', error);
             showError(`Error: ${error.message}`);
-        } finally {
             showLoading(false);
         }
     });
 }
 
 /**
- * Open HPP in iframe
+ * Open HPP using RealEx HPP library in lightbox mode
  */
-function openHPPInIframe(hppData) {
-    const hppUrl = 'https://pay.sandbox.realexpayments.com/pay';
+function openHPPLightbox(hppData) {
+    console.log('Opening HPP lightbox with data:', hppData);
 
-    // Create form dynamically
-    const formHtml = `
-        <form id="hpp-form" action="${hppUrl}" method="POST" target="hpp-iframe">
-            ${Object.entries(hppData).map(([key, value]) =>
-                `<input type="hidden" name="${key}" value="${value}">`
-            ).join('\n')}
-        </form>
-    `;
+    // Set HPP URL (sandbox)
+    RealexHpp.setHppUrl('https://pay.sandbox.realexpayments.com/pay');
 
-    // Insert form into document
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = formHtml;
-    document.body.appendChild(tempDiv);
+    // Initialize HPP in lightbox mode
+    RealexHpp.lightbox.init(
+        'pay-button',
+        `${API_BASE}/hpp-response`,
+        hppData
+    );
 
-    // Show iframe container
-    const hppContainer = document.getElementById('hpp-container');
-    const paymentForm = document.getElementById('payment-form');
-
-    hppContainer.style.display = 'block';
-    paymentForm.style.display = 'none';
-
-    // Submit form to iframe
-    const hppForm = document.getElementById('hpp-form');
-    hppForm.submit();
-
-    // Remove form after submission
+    // The library will automatically open the lightbox with the styled payment form
+    // Manual trigger since we already prevented default submit
     setTimeout(() => {
-        document.body.removeChild(tempDiv);
+        RealexHpp.lightbox.open();
     }, 100);
-
-    // Listen for iframe messages (if HPP sends postMessage)
-    window.addEventListener('message', function(event) {
-        // Verify origin
-        if (event.origin !== 'https://pay.sandbox.realexpayments.com') {
-            return;
-        }
-
-        console.log('HPP Message received:', event.data);
-
-        // Handle completion (reset form display)
-        if (event.data.RESULT) {
-            setTimeout(() => {
-                hppContainer.style.display = 'none';
-                paymentForm.style.display = 'block';
-
-                if (event.data.RESULT === '00') {
-                    showSuccess('Payment completed successfully!', {
-                        orderId: event.data.ORDER_ID,
-                        transactionId: event.data.PASREF
-                    });
-                }
-            }, 2000);
-        }
-    });
 }
 
 
