@@ -137,39 +137,75 @@ function openHPPLightbox(hppData) {
     // Set HPP URL (sandbox)
     RealexHpp.setHppUrl('https://pay.sandbox.realexpayments.com/pay');
 
-    // Create iframe container if it doesn't exist
-    let iframeContainer = document.getElementById('hpp-iframe-container');
-    if (!iframeContainer) {
-        iframeContainer = document.createElement('div');
-        iframeContainer.id = 'hpp-iframe-container';
-        iframeContainer.style.marginTop = '20px';
-
-        const iframe = document.createElement('iframe');
+    // Create iframe if it doesn't exist
+    let iframe = document.getElementById('hpp-iframe');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
         iframe.id = 'hpp-iframe';
         iframe.name = 'hpp-iframe';
         iframe.style.width = '100%';
         iframe.style.height = '600px';
         iframe.style.border = '1px solid #ddd';
         iframe.style.borderRadius = '8px';
-
-        iframeContainer.appendChild(iframe);
+        iframe.style.marginTop = '20px';
 
         // Insert after the form
         const form = document.getElementById('payment-form');
-        form.parentNode.insertBefore(iframeContainer, form.nextSibling);
+        form.parentNode.insertBefore(iframe, form.nextSibling);
     }
 
-    // Show iframe container and hide the form
-    iframeContainer.style.display = 'block';
+    // Show iframe and hide the form
+    iframe.style.display = 'block';
     document.getElementById('payment-form').style.display = 'none';
 
-    // Initialize HPP in embedded mode
-    RealexHpp.embedded.init(
-        'pay-button',
-        'hpp-iframe',
-        `${API_BASE}/hpp-response`,
-        hppData
-    );
+    // Create a hidden form to submit HPP data to iframe
+    let hppForm = document.getElementById('hpp-form-submit');
+    if (hppForm) {
+        hppForm.remove();
+    }
+
+    hppForm = document.createElement('form');
+    hppForm.id = 'hpp-form-submit';
+    hppForm.method = 'POST';
+    hppForm.action = 'https://pay.sandbox.realexpayments.com/pay';
+    hppForm.target = 'hpp-iframe';
+    hppForm.style.display = 'none';
+
+    // Add all HPP data as hidden inputs
+    Object.entries(hppData).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        hppForm.appendChild(input);
+    });
+
+    document.body.appendChild(hppForm);
+
+    // Submit the form to the iframe
+    hppForm.submit();
+
+    // Listen for messages from HPP
+    window.addEventListener('message', function(event) {
+        if (event.origin !== 'https://pay.sandbox.realexpayments.com') {
+            return;
+        }
+
+        console.log('HPP message received:', event.data);
+
+        // Handle response
+        if (event.data && event.data.RESULT) {
+            // Hide iframe and show form again
+            iframe.style.display = 'none';
+            document.getElementById('payment-form').style.display = 'block';
+
+            if (event.data.RESULT === '00') {
+                alert('✅ Payment successful!\n\nTransaction ID: ' + event.data.PASREF);
+            } else {
+                alert('❌ Payment failed: ' + event.data.MESSAGE);
+            }
+        }
+    });
 }
 
 
