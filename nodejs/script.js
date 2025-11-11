@@ -129,26 +129,47 @@ function initializeHPPPaymentForm() {
 }
 
 /**
- * Open HPP using RealEx HPP library in lightbox mode
+ * Open HPP using RealEx HPP library in embedded iframe mode
  */
 function openHPPLightbox(hppData) {
-    console.log('Opening HPP lightbox with data:', hppData);
+    console.log('Opening HPP embedded iframe with data:', hppData);
 
     // Set HPP URL (sandbox)
     RealexHpp.setHppUrl('https://pay.sandbox.realexpayments.com/pay');
 
-    // Initialize HPP in lightbox mode
-    RealexHpp.lightbox.init(
+    // Create iframe container if it doesn't exist
+    let iframeContainer = document.getElementById('hpp-iframe-container');
+    if (!iframeContainer) {
+        iframeContainer = document.createElement('div');
+        iframeContainer.id = 'hpp-iframe-container';
+        iframeContainer.style.marginTop = '20px';
+
+        const iframe = document.createElement('iframe');
+        iframe.id = 'hpp-iframe';
+        iframe.name = 'hpp-iframe';
+        iframe.style.width = '100%';
+        iframe.style.height = '600px';
+        iframe.style.border = '1px solid #ddd';
+        iframe.style.borderRadius = '8px';
+
+        iframeContainer.appendChild(iframe);
+
+        // Insert after the form
+        const form = document.getElementById('payment-form');
+        form.parentNode.insertBefore(iframeContainer, form.nextSibling);
+    }
+
+    // Show iframe container and hide the form
+    iframeContainer.style.display = 'block';
+    document.getElementById('payment-form').style.display = 'none';
+
+    // Initialize HPP in embedded mode
+    RealexHpp.embedded.init(
         'pay-button',
+        'hpp-iframe',
         `${API_BASE}/hpp-response`,
         hppData
     );
-
-    // The library will automatically open the lightbox with the styled payment form
-    // Manual trigger since we already prevented default submit
-    setTimeout(() => {
-        RealexHpp.lightbox.open();
-    }, 100);
 }
 
 
