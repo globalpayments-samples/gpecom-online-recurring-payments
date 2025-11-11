@@ -295,9 +295,9 @@ function getCardData(containerId) {
 
     return {
         number: container.querySelector('.card-number').value.replace(/\s/g, ''),
-        expiry_month: container.querySelector('.card-exp-month').value,
-        expiry_year: container.querySelector('.card-exp-year').value,
-        cvv: container.querySelector('.card-cvv').value,
+        expmonth: container.querySelector('.card-exp-month').value,
+        expyear: container.querySelector('.card-exp-year').value,
+        cvn: container.querySelector('.card-cvv').value,
         type: getCardType(container.querySelector('.card-number').value)
     };
 }
