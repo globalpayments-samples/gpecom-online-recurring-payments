@@ -134,9 +134,6 @@ function initializeHPPPaymentForm() {
 function openHPPLightbox(hppData) {
     console.log('Opening HPP embedded iframe with data:', hppData);
 
-    // Set HPP URL (sandbox)
-    RealexHpp.setHppUrl('https://pay.sandbox.realexpayments.com/pay');
-
     // Create iframe if it doesn't exist
     let iframe = document.getElementById('hpp-iframe');
     if (!iframe) {
