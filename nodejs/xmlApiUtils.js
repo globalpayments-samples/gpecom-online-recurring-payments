@@ -363,3 +363,56 @@ export function parseErrorResponse(response) {
         orderId: response.orderid
     };
 }
+
+/**
+ * Normalize card expiry date format to Global Payments requirements
+ * Accepts various input formats and converts to lowercase with 2-digit year
+ *
+ * Accepted formats:
+ * - {expMonth: "12", expYear: "25"} or {expMonth: "12", expYear: "2025"}
+ * - {expmonth: "12", expyear: "25"} or {expmonth: "12", expyear: "2025"}
+ * - {exp_month: "12", exp_year: "25"} or {exp_month: "12", exp_year: "2025"}
+ *
+ * @param {Object} cardDetails - Card details object with expiry information
+ * @returns {Object} Normalized card details with expmonth and expyear
+ */
+export function normalizeCardExpiry(cardDetails) {
+    if (!cardDetails) {
+        return cardDetails;
+    }
+
+    // Create a copy to avoid mutating the original
+    const normalized = { ...cardDetails };
+
+    // Extract month from various possible field names
+    const month = cardDetails.expMonth || cardDetails.expmonth ||
+                  cardDetails.exp_month || cardDetails.EXPMONTH;
+
+    // Extract year from various possible field names
+    let year = cardDetails.expYear || cardDetails.expyear ||
+               cardDetails.exp_year || cardDetails.EXPYEAR;
+
+    // Normalize year to 2 digits
+    if (year && year.length === 4) {
+        year = year.substring(2); // Convert "2025" to "25"
+    }
+
+    // Set normalized values
+    if (month) {
+        normalized.expmonth = month.toString().padStart(2, '0'); // Ensure 2 digits
+        // Remove other variations
+        delete normalized.expMonth;
+        delete normalized.exp_month;
+        delete normalized.EXPMONTH;
+    }
+
+    if (year) {
+        normalized.expyear = year.toString().padStart(2, '0'); // Ensure 2 digits
+        // Remove other variations
+        delete normalized.expYear;
+        delete normalized.exp_year;
+        delete normalized.EXPYEAR;
+    }
+
+    return normalized;
+}

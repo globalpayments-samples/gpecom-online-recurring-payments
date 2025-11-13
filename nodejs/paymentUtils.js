@@ -26,7 +26,8 @@ import {
     formatStartDate,
     getXMLAPIEndpoint,
     verifyResponseHash,
-    parseErrorResponse
+    parseErrorResponse,
+    normalizeCardExpiry
 } from './xmlApiUtils.js';
 
 /**
@@ -48,13 +49,16 @@ export async function processOneTimePayment(config, paymentData) {
         const amountInCents = convertToCents(amount);
 
         // Parse card data - token parameter should contain card data object
-        const cardData = typeof token === 'object' ? token : {
+        let cardData = typeof token === 'object' ? token : {
             number: token,
             expmonth: '12',
             expyear: '25',
             cvn: '123',
             chname: `${customerData?.first_name || 'Card'} ${customerData?.last_name || 'Holder'}`
         };
+
+        // Normalize card expiry format to handle various input formats
+        cardData = normalizeCardExpiry(cardData);
 
         // Generate authentication hash for payment
         // For auth with card details, use the actual card number in hash
@@ -625,6 +629,9 @@ export async function processRecurringPaymentSetup(config, data) {
     try {
         const { cardDetails, amount, currency, frequency, startDate, customerData, billingData } = data;
 
+        // Normalize card expiry format to handle various input formats
+        const normalizedCardDetails = normalizeCardExpiry(cardDetails);
+
         // Generate unique references
         // Format matches Global Payments documentation examples (shorter alphanumeric)
         const timestamp = Date.now().toString();
@@ -655,7 +662,7 @@ export async function processRecurringPaymentSetup(config, data) {
             paymentMethodRef,
             payerRef,
             cardholderName: `${customerData.first_name} ${customerData.last_name}`,
-            cardDetails
+            cardDetails: normalizedCardDetails
         });
 
         // Step 3: Process initial payment and store payment method

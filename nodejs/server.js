@@ -14,7 +14,8 @@ import express from 'express';
 import * as dotenv from 'dotenv';
 import {
     processOneTimePayment,
-    processRecurringPaymentSetup
+    processRecurringPaymentSetup,
+    createRecurringSchedule
 } from './paymentUtils.js';
 import {
     generateTimestamp,
@@ -234,6 +235,148 @@ app.post('/hpp-request', async (req, res) => {
 });
 
 /**
+ * Generate HPP request for recurring payment setup
+ * Creates HPP parameters with card storage enabled for recurring payments
+ */
+app.post('/hpp-recurring-request', async (req, res) => {
+    try {
+        const config = validateConfig();
+        const {
+            amount,
+            currency = 'USD',
+            frequency,
+            start_date,
+            customer_email,
+            customer_phone,
+            first_name,
+            last_name,
+            billing_street1,
+            billing_street2,
+            billing_street3,
+            billing_city,
+            billing_state,
+            billing_postalcode,
+            billing_country,
+            shipping_street1,
+            shipping_street2,
+            shipping_street3,
+            shipping_city,
+            shipping_state,
+            shipping_postalcode,
+            shipping_country
+        } = req.body;
+
+        // Validate required fields
+        if (!amount || amount <= 0) {
+            return sendErrorResponse(res, 400, 'Valid amount is required', 'INVALID_AMOUNT');
+        }
+
+        if (!frequency) {
+            return sendErrorResponse(res, 400, 'Frequency is required for recurring payments', 'INVALID_FREQUENCY');
+        }
+
+        if (!start_date) {
+            return sendErrorResponse(res, 400, 'Start date is required for recurring payments', 'INVALID_START_DATE');
+        }
+
+        // Generate request parameters
+        const timestamp = generateTimestamp();
+        const orderId = generateOrderId('REC');
+        const amountInCents = convertToCents(amount);
+
+        // Generate unique references for recurring setup
+        const timestampMs = Date.now().toString();
+        const payerRef = `CUS${timestampMs.substring(timestampMs.length - 10)}`;
+        const paymentRef = `PMT${timestampMs.substring(timestampMs.length - 10)}`;
+
+        // Generate hash
+        const hash = generateHPPHash({
+            timestamp,
+            merchantId: config.merchantId,
+            orderId,
+            amount: amountInCents,
+            currency
+        }, config.sharedSecret);
+
+        // Build HPP request with card storage parameters
+        const hppRequest = {
+            TIMESTAMP: timestamp,
+            MERCHANT_ID: config.merchantId,
+            ACCOUNT: config.account,
+            ORDER_ID: orderId,
+            AMOUNT: amountInCents,
+            CURRENCY: currency,
+            AUTO_SETTLE_FLAG: '1',
+            HPP_VERSION: '2',
+            HPP_CHANNEL: 'ECOM',
+            MERCHANT_RESPONSE_URL: `${req.protocol}://${req.get('host')}/hpp-recurring-response`,
+            SHA1HASH: hash,
+
+            // Card storage parameters for recurring
+            OFFER_SAVE_CARD: '1',  // Prompt user to save card
+            PAYER_REF: payerRef,
+            PMT_REF: paymentRef,
+            PAYER_EXIST: '0',  // New payer
+            VALIDATE_CARD_ONLY: '0',  // Process initial payment
+
+            // Add recurring metadata as supplementary data
+            HPP_SUPPLEMENTARY_DATA: JSON.stringify({
+                frequency,
+                start_date,
+                payer_ref: payerRef,
+                payment_ref: paymentRef
+            })
+        };
+
+        // Add optional customer fields
+        if (customer_email) {
+            hppRequest.HPP_CUSTOMER_EMAIL = customer_email;
+        }
+        if (customer_phone) {
+            hppRequest.HPP_CUSTOMER_PHONENUMBER_MOBILE = customer_phone;
+        }
+        if (first_name) {
+            hppRequest.HPP_CUSTOMER_FIRSTNAME = first_name;
+        }
+        if (last_name) {
+            hppRequest.HPP_CUSTOMER_LASTNAME = last_name;
+        }
+
+        // Add billing address
+        if (billing_street1) hppRequest.HPP_BILLING_STREET1 = billing_street1;
+        if (billing_street2) hppRequest.HPP_BILLING_STREET2 = billing_street2;
+        if (billing_street3) hppRequest.HPP_BILLING_STREET3 = billing_street3;
+        if (billing_city) hppRequest.HPP_BILLING_CITY = billing_city;
+        if (billing_state) hppRequest.HPP_BILLING_STATE = billing_state;
+        if (billing_postalcode) hppRequest.HPP_BILLING_POSTALCODE = billing_postalcode;
+        if (billing_country) hppRequest.HPP_BILLING_COUNTRY = billing_country;
+
+        // Add shipping address if provided
+        if (shipping_street1) hppRequest.HPP_SHIPPING_STREET1 = shipping_street1;
+        if (shipping_street2) hppRequest.HPP_SHIPPING_STREET2 = shipping_street2;
+        if (shipping_street3) hppRequest.HPP_SHIPPING_STREET3 = shipping_street3;
+        if (shipping_city) hppRequest.HPP_SHIPPING_CITY = shipping_city;
+        if (shipping_state) hppRequest.HPP_SHIPPING_STATE = shipping_state;
+        if (shipping_postalcode) hppRequest.HPP_SHIPPING_POSTALCODE = shipping_postalcode;
+        if (shipping_country) hppRequest.HPP_SHIPPING_COUNTRY = shipping_country;
+
+        console.log('📤 HPP Recurring request generated:', {
+            orderId,
+            amount: amountInCents,
+            payerRef,
+            paymentRef,
+            frequency
+        });
+
+        sendSuccessResponse(res, hppRequest, 'HPP recurring request generated successfully');
+
+    } catch (error) {
+        console.error('HPP recurring request generation error:', error.message);
+        sendErrorResponse(res, 500, error.message, 'HPP_RECURRING_REQUEST_ERROR');
+    }
+});
+
+/**
  * Process HPP response endpoint
  * Handles the response from the Hosted Payment Page
  */
@@ -344,6 +487,196 @@ app.post('/hpp-response', async (req, res) => {
             <head><title>Error</title></head>
             <body>
                 <h1>Error Processing Payment Response</h1>
+                <p>${error.message}</p>
+            </body>
+            </html>
+        `);
+    }
+});
+
+/**
+ * Process HPP recurring response and create schedule
+ * Handles response from HPP with card storage, then creates recurring schedule
+ */
+app.post('/hpp-recurring-response', async (req, res) => {
+    try {
+        const config = validateConfig();
+        const response = req.body;
+
+        console.log('📥 HPP Recurring Response received:', response);
+
+        // Extract response parameters
+        const {
+            TIMESTAMP,
+            MERCHANT_ID,
+            ORDER_ID,
+            RESULT,
+            MESSAGE,
+            PASREF,
+            AUTHCODE = '',
+            SHA1HASH,
+            SAVED_PAYER_REF,
+            SAVED_PMT_REF,
+            HPP_SUPPLEMENTARY_DATA
+        } = response;
+
+        // Verify hash
+        const expectedHash = generateHPPResponseHash({
+            timestamp: TIMESTAMP,
+            merchantId: MERCHANT_ID,
+            orderId: ORDER_ID,
+            result: RESULT,
+            message: MESSAGE,
+            pasref: PASREF,
+            authcode: AUTHCODE
+        }, config.sharedSecret);
+
+        if (expectedHash.toLowerCase() !== SHA1HASH.toLowerCase()) {
+            console.error('❌ HPP Recurring Response hash verification failed');
+            return res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head><title>Payment Failed</title></head>
+                <body>
+                    <h1>Payment Verification Failed</h1>
+                    <p>The payment response could not be verified. Please contact support.</p>
+                </body>
+                </html>
+            `);
+        }
+
+        // Check if payment was successful
+        if (RESULT !== '00') {
+            console.log('❌ HPP Recurring Payment failed:', MESSAGE);
+            return res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Payment Failed</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+                        .error { color: #dc3545; }
+                        .info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1 class="error">❌ Payment Failed</h1>
+                    <div class="info">
+                        <p><strong>Order ID:</strong> ${ORDER_ID}</p>
+                        <p><strong>Error Code:</strong> ${RESULT}</p>
+                    </div>
+                    <p>${MESSAGE}</p>
+                    <button onclick="window.history.back()">Go Back</button>
+                </body>
+                </html>
+            `);
+        }
+
+        // Payment successful - now create recurring schedule
+        console.log('✅ HPP Recurring Payment successful - Creating schedule...');
+
+        // Parse supplementary data to get recurring details
+        let recurringData = {};
+        try {
+            recurringData = HPP_SUPPLEMENTARY_DATA ? JSON.parse(HPP_SUPPLEMENTARY_DATA) : {};
+        } catch (e) {
+            console.error('Failed to parse supplementary data:', e);
+        }
+
+        const payerRef = SAVED_PAYER_REF || recurringData.payer_ref;
+        const paymentRef = SAVED_PMT_REF || recurringData.payment_ref;
+        const frequency = recurringData.frequency;
+        const startDate = recurringData.start_date;
+
+        if (!payerRef || !paymentRef) {
+            console.error('❌ Missing saved card references');
+            return res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head><title>Setup Incomplete</title></head>
+                <body>
+                    <h1>Card Not Saved</h1>
+                    <p>The payment was successful but the card was not saved for recurring use. Please contact support.</p>
+                    <p><strong>Transaction ID:</strong> ${PASREF}</p>
+                </body>
+                </html>
+            `);
+        }
+
+        // Create recurring schedule using Payment Scheduler
+        try {
+            const scheduleResult = await createRecurringSchedule(config, {
+                scheduleRef: Date.now().toString().substring(3),
+                payerRef,
+                paymentMethodRef: paymentRef,
+                amount: parseFloat(response.AMOUNT) / 100,
+                currency: response.CURRENCY || 'USD',
+                frequency,
+                startDate,
+                alias: `Recurring ${frequency} payment`,
+                description: `Scheduled ${frequency} payment`
+            });
+
+            console.log('✅ Recurring schedule created successfully');
+
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Recurring Payment Setup Complete</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+                        .success { color: #28a745; }
+                        .info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                        .schedule { background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1 class="success">✅ Recurring Payment Setup Complete!</h1>
+                    <div class="info">
+                        <h3>Initial Payment</h3>
+                        <p><strong>Transaction ID:</strong> ${PASREF}</p>
+                        <p><strong>Authorization Code:</strong> ${AUTHCODE}</p>
+                        <p><strong>Amount:</strong> ${response.AMOUNT} ${response.CURRENCY}</p>
+                    </div>
+                    <div class="schedule">
+                        <h3>Recurring Schedule</h3>
+                        <p><strong>Schedule ID:</strong> ${scheduleResult.scheduleRef}</p>
+                        <p><strong>Frequency:</strong> ${scheduleResult.scheduleText}</p>
+                        <p><strong>Start Date:</strong> ${startDate}</p>
+                        <p><strong>Customer ID:</strong> ${payerRef}</p>
+                    </div>
+                    <p>Your recurring payment has been set up successfully. You will be charged automatically according to the schedule above.</p>
+                    <button onclick="window.close()">Close Window</button>
+                </body>
+                </html>
+            `);
+
+        } catch (scheduleError) {
+            console.error('❌ Failed to create recurring schedule:', scheduleError.message);
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head><title>Schedule Creation Failed</title></head>
+                <body>
+                    <h1>Payment Successful, Schedule Failed</h1>
+                    <p>Your payment was processed successfully, but we could not create the recurring schedule.</p>
+                    <p><strong>Transaction ID:</strong> ${PASREF}</p>
+                    <p><strong>Error:</strong> ${scheduleError.message}</p>
+                    <p>Please contact support to complete your recurring payment setup.</p>
+                </body>
+                </html>
+            `);
+        }
+
+    } catch (error) {
+        console.error('HPP recurring response processing error:', error.message);
+        res.status(500).send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Error</title></head>
+            <body>
+                <h1>Error Processing Recurring Payment Response</h1>
                 <p>${error.message}</p>
             </body>
             </html>

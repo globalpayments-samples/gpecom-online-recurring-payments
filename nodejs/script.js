@@ -207,164 +207,68 @@ function openHPPLightbox(hppData) {
 
 
 /**
- * Initialize recurring payment form
- * Note: Recurring payments still use the backend API with card details
- * since HPP doesn't support the complete recurring setup workflow (customer creation, card storage, schedule creation)
+ * Initialize recurring payment form with HPP
+ * Uses Global Payments HPP with OFFER_SAVE_CARD for secure recurring setup
  */
 function initializeRecurringForm() {
     const form = document.getElementById('recurring-form');
     if (!form) return;
 
-    // Create credit card form for recurring
-    createSimplifiedCardForm('credit-card-recurring');
-
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         try {
-            showLoading(true, 'Setting up recurring payment...');
+            showLoading(true, 'Preparing secure payment...');
 
             // Get form data
             const formData = new FormData(form);
 
-            // Get card data (in production, this would be tokenized)
-            const cardData = getCardData('credit-card-recurring');
-
-            // Prepare recurring payment data with card details
-            const recurringData = {
-                cardDetails: cardData,
+            // Prepare HPP recurring request data
+            const hppRecurringData = {
                 amount: parseFloat(formData.get('amount')),
                 currency: 'USD',
                 frequency: formData.get('frequency'),
-                startDate: formData.get('start_date'),
+                start_date: formData.get('start_date'),
                 // Customer information
-                customerData: {
-                    first_name: formData.get('first_name'),
-                    last_name: formData.get('last_name'),
-                    email: formData.get('email'),
-                    phone: formData.get('phone'),
-                    street_address: formData.get('street_address'),
-                    city: formData.get('city'),
-                    state: formData.get('state'),
-                    billing_zip: formData.get('billing_zip'),
-                    country: formData.get('country')
-                },
+                first_name: formData.get('first_name'),
+                last_name: formData.get('last_name'),
+                customer_email: formData.get('email'),
+                customer_phone: formData.get('phone'),
                 // Billing address
-                billingData: {
-                    street_address: formData.get('street_address'),
-                    city: formData.get('city'),
-                    state: formData.get('state'),
-                    billing_zip: formData.get('billing_zip'),
-                    country: formData.get('country')
-                }
+                billing_street1: formData.get('street_address'),
+                billing_city: formData.get('city'),
+                billing_state: formData.get('state'),
+                billing_postalcode: formData.get('billing_zip'),
+                billing_country: formData.get('country')
             };
 
-            console.log('Submitting recurring payment setup...');
+            console.log('Requesting HPP for recurring payment setup...');
 
-            // Send to backend - use the processRecurringPaymentSetup endpoint
-            const response = await fetch(`${API_BASE}/recurring-setup`, {
+            // Get HPP parameters from backend
+            const response = await fetch(`${API_BASE}/hpp-recurring-request`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(recurringData)
+                body: JSON.stringify(hppRecurringData)
             });
 
             const result = await response.json();
 
             if (result.success) {
-                showRecurringSuccess(result.data);
+                console.log('Opening HPP for recurring payment');
+                openHPPLightbox(result.data);
             } else {
-                showError(result.message || 'Recurring payment setup failed');
+                showError(result.message || 'Failed to prepare recurring payment');
             }
 
         } catch (error) {
             console.error('Recurring payment error:', error);
-            showError(`Recurring payment setup error: ${error.message}`);
+            showError(`Recurring payment error: ${error.message}`);
         } finally {
             showLoading(false);
         }
     });
-}
-
-/**
- * Create simplified card input form
- * In production, use proper XML API tokenization or RealEx HPP
- */
-function createSimplifiedCardForm(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    container.innerHTML = `
-        <div style="margin-bottom: 12px;">
-            <label style="display: block; margin-bottom: 4px; font-weight: 500;">Card Number:</label>
-            <input type="text"
-                   class="card-number gp-input"
-                   placeholder="4263970000005262"
-                   maxlength="19"
-                   style="width: 100%;"
-                   required>
-            <small style="color: #666; font-size: 12px;">Test card: 4263970000005262</small>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-            <div>
-                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Exp Month:</label>
-                <input type="text"
-                       class="card-exp-month gp-input"
-                       placeholder="12"
-                       maxlength="2"
-                       required>
-            </div>
-            <div>
-                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Exp Year:</label>
-                <input type="text"
-                       class="card-exp-year gp-input"
-                       placeholder="25"
-                       maxlength="2"
-                       required>
-            </div>
-            <div>
-                <label style="display: block; margin-bottom: 4px; font-weight: 500;">CVV:</label>
-                <input type="text"
-                       class="card-cvv gp-input"
-                       placeholder="123"
-                       maxlength="4"
-                       required>
-            </div>
-        </div>
-        <div style="margin-top: 8px;">
-            <small style="color: #666; font-size: 12px;">
-                <strong>Note:</strong> This is a simplified demo form. In production, use RealEx HPP or XML API tokenization for PCI compliance.
-            </small>
-        </div>
-    `;
-}
-
-/**
- * Get card data from form
- */
-function getCardData(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return null;
-
-    return {
-        number: container.querySelector('.card-number').value.replace(/\s/g, ''),
-        expmonth: container.querySelector('.card-exp-month').value,
-        expyear: container.querySelector('.card-exp-year').value,
-        cvn: container.querySelector('.card-cvv').value,
-        type: getCardType(container.querySelector('.card-number').value)
-    };
-}
-
-/**
- * Determine card type from number
- */
-function getCardType(number) {
-    const cleanNumber = number.replace(/\s/g, '');
-    if (cleanNumber.startsWith('4')) return 'VISA';
-    if (cleanNumber.startsWith('5')) return 'MASTERCARD';
-    if (cleanNumber.startsWith('37')) return 'AMEX';
-    return 'UNKNOWN';
 }
 
 /**
