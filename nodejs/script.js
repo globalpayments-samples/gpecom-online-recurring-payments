@@ -134,6 +134,15 @@ function initializeHPPPaymentForm() {
 function openHPPLightbox(hppData) {
     console.log('Opening HPP embedded iframe with data:', hppData);
 
+    // Determine which form is being submitted by checking the active tab
+    const activeTab = document.querySelector('.gp-tab-content.active');
+    const activeForm = activeTab ? activeTab.querySelector('form') : null;
+
+    if (!activeForm) {
+        console.error('No active form found');
+        return;
+    }
+
     // Create iframe if it doesn't exist
     let iframe = document.getElementById('hpp-iframe');
     if (!iframe) {
@@ -146,14 +155,13 @@ function openHPPLightbox(hppData) {
         iframe.style.borderRadius = '8px';
         iframe.style.marginTop = '20px';
 
-        // Insert after the form
-        const form = document.getElementById('payment-form');
-        form.parentNode.insertBefore(iframe, form.nextSibling);
+        // Insert after the active form
+        activeForm.parentNode.insertBefore(iframe, activeForm.nextSibling);
     }
 
-    // Show iframe and hide the form
+    // Show iframe and hide the active form
     iframe.style.display = 'block';
-    document.getElementById('payment-form').style.display = 'none';
+    activeForm.style.display = 'none';
 
     // Create a hidden form to submit HPP data to iframe
     let hppForm = document.getElementById('hpp-form-submit');
@@ -192,9 +200,15 @@ function openHPPLightbox(hppData) {
 
         // Handle response
         if (event.data && event.data.RESULT) {
+            // Find the active tab and form
+            const activeTab = document.querySelector('.gp-tab-content.active');
+            const activeForm = activeTab ? activeTab.querySelector('form') : null;
+
             // Hide iframe and show form again
             iframe.style.display = 'none';
-            document.getElementById('payment-form').style.display = 'block';
+            if (activeForm) {
+                activeForm.style.display = 'block';
+            }
 
             if (event.data.RESULT === '00') {
                 alert('✅ Payment successful!\n\nTransaction ID: ' + event.data.PASREF);
