@@ -30,6 +30,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set default start date to tomorrow
     setDefaultStartDate();
 
+    // Auto-fill forms with test data on load
+    autoFillPaymentForm();
+    autoFillRecurringForm(0); // Use US customer by default
+
+    // Add auto-fill buttons
+    addAutoFillButtons();
+
     console.log('Initialization complete');
 });
 
@@ -66,6 +73,368 @@ function setDefaultStartDate() {
         const dateString = tomorrow.toISOString().split('T')[0];
         startDateInput.value = dateString;
         startDateInput.min = dateString; // Prevent selecting past dates
+    }
+}
+
+/**
+ * Global Payments Test Cards
+ * Source: https://developer.globalpay.com/test-cards
+ */
+const testCards = [
+    {
+        name: 'Visa - Approved',
+        number: '4263970000005262',
+        cvv: '123',
+        expiry: '12/25',
+        type: 'visa'
+    },
+    {
+        name: 'Visa - Declined',
+        number: '4000120000001154',
+        cvv: '123',
+        expiry: '12/25',
+        type: 'visa'
+    },
+    {
+        name: 'Mastercard - Approved',
+        number: '5425230000004415',
+        cvv: '123',
+        expiry: '12/25',
+        type: 'mastercard'
+    },
+    {
+        name: 'Mastercard - Declined',
+        number: '5114610000004778',
+        cvv: '123',
+        expiry: '12/25',
+        type: 'mastercard'
+    },
+    {
+        name: 'Amex - Approved',
+        number: '374101000000608',
+        cvv: '1234',
+        expiry: '12/25',
+        type: 'amex'
+    },
+    {
+        name: 'Discover - Approved',
+        number: '6011000000000087',
+        cvv: '123',
+        expiry: '12/25',
+        type: 'discover'
+    }
+];
+
+/**
+ * Test data for different countries
+ * Country codes use ISO 3166-1 numeric format (3 digits) as required by Global Payments HPP
+ */
+const testDataProfiles = [
+    {
+        name: 'US Customer',
+        first_name: 'John',
+        last_name: 'Smith',
+        email: 'john.smith@example.com',
+        phone: '555-123-4567',
+        street_address: '123 Main Street',
+        city: 'New York',
+        state: 'NY',
+        billing_zip: '10001',
+        country: '840'  // USA - ISO 3166-1 numeric
+    },
+    {
+        name: 'UK Customer',
+        first_name: 'James',
+        last_name: 'Wilson',
+        email: 'james.wilson@example.co.uk',
+        phone: '020-7123-4567',
+        street_address: '45 Baker Street',
+        city: 'London',
+        state: '',
+        billing_zip: 'W1U 6TY',
+        country: '826'  // United Kingdom - ISO 3166-1 numeric
+    },
+    {
+        name: 'Canadian Customer',
+        first_name: 'Emma',
+        last_name: 'Johnson',
+        email: 'emma.johnson@example.ca',
+        phone: '416-555-0123',
+        street_address: '789 Maple Avenue',
+        city: 'Toronto',
+        state: 'ON',
+        billing_zip: 'M5H 2N2',
+        country: '124'  // Canada - ISO 3166-1 numeric
+    },
+    {
+        name: 'Australian Customer',
+        first_name: 'Oliver',
+        last_name: 'Brown',
+        email: 'oliver.brown@example.com.au',
+        phone: '02-9876-5432',
+        street_address: '321 Sydney Road',
+        city: 'Sydney',
+        state: 'NSW',
+        billing_zip: '2000',
+        country: '036'  // Australia - ISO 3166-1 numeric
+    },
+    {
+        name: 'German Customer',
+        first_name: 'Hans',
+        last_name: 'Mueller',
+        email: 'hans.mueller@example.de',
+        phone: '+49-30-12345678',
+        street_address: 'Hauptstraße 42',
+        city: 'Berlin',
+        state: '',
+        billing_zip: '10115',
+        country: '276'  // Germany - ISO 3166-1 numeric
+    },
+    {
+        name: 'Irish Customer',
+        first_name: 'Liam',
+        last_name: 'O\'Brien',
+        email: 'liam.obrien@example.ie',
+        phone: '01-234-5678',
+        street_address: '56 Grafton Street',
+        city: 'Dublin',
+        state: '',
+        billing_zip: 'D02 XY45',
+        country: '372'  // Ireland - ISO 3166-1 numeric
+    }
+];
+
+/**
+ * Auto-fill form with test data
+ */
+function autoFillRecurringForm(profileIndex = 0) {
+    const profile = testDataProfiles[profileIndex % testDataProfiles.length];
+
+    // Customer Information
+    const firstNameInput = document.getElementById('recurring-first-name');
+    const lastNameInput = document.getElementById('recurring-last-name');
+    const emailInput = document.getElementById('recurring-email');
+    const phoneInput = document.getElementById('recurring-phone');
+
+    if (firstNameInput) firstNameInput.value = profile.first_name;
+    if (lastNameInput) lastNameInput.value = profile.last_name;
+    if (emailInput) emailInput.value = profile.email;
+    if (phoneInput) phoneInput.value = profile.phone;
+
+    // Billing Address
+    const streetInput = document.getElementById('recurring-street-address');
+    const cityInput = document.getElementById('recurring-city');
+    const stateInput = document.getElementById('recurring-state');
+    const zipInput = document.getElementById('recurring-billing-zip');
+    const countryInput = document.getElementById('recurring-country');
+
+    if (streetInput) streetInput.value = profile.street_address;
+    if (cityInput) cityInput.value = profile.city;
+    if (stateInput) stateInput.value = profile.state;
+    if (zipInput) zipInput.value = profile.billing_zip;
+    if (countryInput) countryInput.value = profile.country;
+
+    console.log(`✅ Auto-filled form with: ${profile.name}`);
+}
+
+/**
+ * Auto-fill payment form with test data
+ */
+function autoFillPaymentForm() {
+    const amountInput = document.getElementById('amount');
+    const currencySelect = document.getElementById('currency');
+    const emailInput = document.getElementById('customer_email');
+    const streetInput = document.getElementById('billing_street1');
+    const cityInput = document.getElementById('billing_city');
+    const postalCodeInput = document.getElementById('billing_postalcode');
+    const countryInput = document.getElementById('billing_country');
+
+    if (amountInput) amountInput.value = '19.99';
+    if (currencySelect) currencySelect.value = 'USD';
+    if (emailInput) emailInput.value = 'test.customer@example.com';
+    if (streetInput) streetInput.value = '123 Test Street';
+    if (cityInput) cityInput.value = 'Test City';
+    if (postalCodeInput) postalCodeInput.value = '12345';
+    if (countryInput) countryInput.value = '840';
+
+    console.log('✅ Auto-filled payment form with test data');
+}
+
+/**
+ * Copy text to clipboard
+ */
+function copyToClipboard(text, label) {
+    navigator.clipboard.writeText(text).then(() => {
+        console.log(`✅ Copied ${label}: ${text}`);
+        // Show a brief visual feedback
+        const toast = document.createElement('div');
+        toast.textContent = `✓ Copied ${label}`;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.right = '20px';
+        toast.style.backgroundColor = '#28a745';
+        toast.style.color = 'white';
+        toast.style.padding = '12px 20px';
+        toast.style.borderRadius = '4px';
+        toast.style.zIndex = '10000';
+        toast.style.fontSize = '14px';
+        toast.style.fontWeight = '500';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+    });
+}
+
+/**
+ * Create test cards info panel
+ */
+function createTestCardsPanel() {
+    const panel = document.createElement('div');
+    panel.style.backgroundColor = '#f8f9fa';
+    panel.style.border = '1px solid #dee2e6';
+    panel.style.borderRadius = '8px';
+    panel.style.padding = '16px';
+    panel.style.marginBottom = '20px';
+
+    const title = document.createElement('h3');
+    title.textContent = '💳 Test Cards (Click to Copy)';
+    title.style.margin = '0 0 12px 0';
+    title.style.fontSize = '16px';
+    title.style.fontWeight = '600';
+    panel.appendChild(title);
+
+    const info = document.createElement('p');
+    info.textContent = 'Click any card number to copy it to clipboard';
+    info.style.fontSize = '13px';
+    info.style.color = '#6c757d';
+    info.style.marginBottom = '12px';
+    panel.appendChild(info);
+
+    const cardsGrid = document.createElement('div');
+    cardsGrid.style.display = 'grid';
+    cardsGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+    cardsGrid.style.gap = '12px';
+
+    testCards.forEach(card => {
+        const cardDiv = document.createElement('div');
+        cardDiv.style.backgroundColor = 'white';
+        cardDiv.style.border = '1px solid #dee2e6';
+        cardDiv.style.borderRadius = '6px';
+        cardDiv.style.padding = '12px';
+        cardDiv.style.cursor = 'pointer';
+        cardDiv.style.transition = 'all 0.2s';
+
+        cardDiv.addEventListener('mouseenter', () => {
+            cardDiv.style.borderColor = '#007bff';
+            cardDiv.style.boxShadow = '0 2px 8px rgba(0,123,255,0.1)';
+        });
+
+        cardDiv.addEventListener('mouseleave', () => {
+            cardDiv.style.borderColor = '#dee2e6';
+            cardDiv.style.boxShadow = 'none';
+        });
+
+        const cardName = document.createElement('div');
+        cardName.textContent = card.name;
+        cardName.style.fontWeight = '600';
+        cardName.style.fontSize = '13px';
+        cardName.style.marginBottom = '8px';
+        cardName.style.color = card.name.includes('Approved') ? '#28a745' : '#dc3545';
+        cardDiv.appendChild(cardName);
+
+        const cardNumber = document.createElement('div');
+        cardNumber.textContent = `Card: ${card.number}`;
+        cardNumber.style.fontFamily = 'monospace';
+        cardNumber.style.fontSize = '13px';
+        cardNumber.style.marginBottom = '4px';
+        cardDiv.appendChild(cardNumber);
+
+        const cardDetails = document.createElement('div');
+        cardDetails.textContent = `CVV: ${card.cvv} | Exp: ${card.expiry}`;
+        cardDetails.style.fontSize = '12px';
+        cardDetails.style.color = '#6c757d';
+        cardDiv.appendChild(cardDetails);
+
+        cardDiv.addEventListener('click', () => {
+            copyToClipboard(card.number, card.name);
+        });
+
+        cardsGrid.appendChild(cardDiv);
+    });
+
+    panel.appendChild(cardsGrid);
+
+    return panel;
+}
+
+/**
+ * Add auto-fill buttons to forms
+ */
+function addAutoFillButtons() {
+    // Add button to recurring form
+    const recurringForm = document.getElementById('recurring-form');
+    if (recurringForm) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.marginBottom = '16px';
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.gap = '8px';
+        buttonContainer.style.flexWrap = 'wrap';
+
+        // Create a dropdown for selecting test profiles
+        const selectLabel = document.createElement('label');
+        selectLabel.textContent = 'Quick Fill Test Data: ';
+        selectLabel.style.marginRight = '8px';
+        selectLabel.style.fontWeight = '500';
+
+        const select = document.createElement('select');
+        select.className = 'gp-select';
+        select.style.flex = '1';
+        select.style.minWidth = '200px';
+
+        testDataProfiles.forEach((profile, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = profile.name;
+            select.appendChild(option);
+        });
+
+        select.addEventListener('change', (e) => {
+            autoFillRecurringForm(parseInt(e.target.value));
+        });
+
+        buttonContainer.appendChild(selectLabel);
+        buttonContainer.appendChild(select);
+
+        // Insert at the top of the form
+        recurringForm.insertBefore(buttonContainer, recurringForm.firstChild);
+
+        // Add test cards panel after the dropdown
+        const testCardsPanel = createTestCardsPanel();
+        recurringForm.insertBefore(testCardsPanel, recurringForm.children[1]);
+    }
+
+    // Add button to payment form
+    const paymentForm = document.getElementById('payment-form');
+    if (paymentForm) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = '🔄 Fill Test Data';
+        button.className = 'gp-button';
+        button.style.marginBottom = '16px';
+        button.style.backgroundColor = '#6c757d';
+        button.style.color = 'white';
+
+        button.addEventListener('click', () => {
+            autoFillPaymentForm();
+        });
+
+        // Insert at the top of the form
+        paymentForm.insertBefore(button, paymentForm.firstChild);
+
+        // Add test cards panel after the button
+        const testCardsPanel = createTestCardsPanel();
+        paymentForm.insertBefore(testCardsPanel, paymentForm.children[1]);
     }
 }
 
@@ -143,23 +512,33 @@ function openHPPLightbox(hppData) {
         return;
     }
 
-    // Create iframe if it doesn't exist
-    let iframe = document.getElementById('hpp-iframe');
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'hpp-iframe';
-        iframe.name = 'hpp-iframe';
-        iframe.style.width = '100%';
-        iframe.style.height = '600px';
-        iframe.style.border = '1px solid #ddd';
-        iframe.style.borderRadius = '8px';
-        iframe.style.marginTop = '20px';
-
-        // Insert after the active form
-        activeForm.parentNode.insertBefore(iframe, activeForm.nextSibling);
+    // Remove any existing iframe to ensure clean state
+    let existingIframe = document.getElementById('hpp-iframe');
+    if (existingIframe) {
+        console.log('Removing existing iframe');
+        existingIframe.remove();
     }
 
+    // Create fresh iframe
+    console.log('Creating new iframe...');
+    const iframe = document.createElement('iframe');
+    iframe.id = 'hpp-iframe';
+    iframe.name = 'hpp-iframe';
+    iframe.style.width = '100%';
+    iframe.style.height = '600px';
+    iframe.style.border = '1px solid #ddd';
+    iframe.style.borderRadius = '8px';
+    iframe.style.marginTop = '20px';
+    iframe.style.backgroundColor = '#f9f9f9';
+    iframe.setAttribute('allow', 'payment');
+    iframe.setAttribute('sandbox', 'allow-forms allow-scripts allow-same-origin allow-top-navigation');
+
+    // Insert after the active form
+    activeForm.parentNode.insertBefore(iframe, activeForm.nextSibling);
+    console.log('Iframe created and inserted into DOM');
+
     // Show iframe and hide the active form
+    console.log('Showing iframe, hiding form');
     iframe.style.display = 'block';
     activeForm.style.display = 'none';
 
@@ -187,8 +566,17 @@ function openHPPLightbox(hppData) {
 
     document.body.appendChild(hppForm);
 
-    // Submit the form to the iframe
-    hppForm.submit();
+    // Submit the form to the iframe after a small delay to ensure iframe is ready
+    console.log('Submitting HPP form to iframe...');
+    console.log('Form action:', hppForm.action);
+    console.log('Form target:', hppForm.target);
+    console.log('Form data:', Object.fromEntries(new FormData(hppForm)));
+
+    // Use setTimeout to ensure iframe is fully ready
+    setTimeout(() => {
+        hppForm.submit();
+        console.log('Form submitted successfully');
+    }, 100);
 
     // Listen for messages from HPP
     window.addEventListener('message', function(event) {
@@ -269,10 +657,14 @@ function initializeRecurringForm() {
 
             const result = await response.json();
 
+            console.log('HPP Response:', result);
+
             if (result.success) {
                 console.log('Opening HPP for recurring payment');
+                showLoading(false); // Hide loading before opening iframe
                 openHPPLightbox(result.data);
             } else {
+                showLoading(false);
                 showError(result.message || 'Failed to prepare recurring payment');
             }
 
