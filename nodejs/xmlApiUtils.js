@@ -150,6 +150,10 @@ export function generateCardNewHash(params, sharedSecret) {
  * Generate authentication hash for Hosted Payment Page (HPP) requests
  * Hash blueprint: timestamp.merchantid.orderid.amount.currency
  *
+ * Note: The HPP hash does NOT include PAYER_REF or other card storage parameters.
+ * Those are separate fields in the HPP request, but not part of the hash calculation.
+ * According to Global Payments HPP documentation, the hash is always the same 5 fields.
+ *
  * @param {Object} params - Request parameters
  * @param {string} params.timestamp - Request timestamp
  * @param {string} params.merchantId - Merchant ID
@@ -161,7 +165,11 @@ export function generateCardNewHash(params, sharedSecret) {
  */
 export function generateHPPHash(params, sharedSecret) {
     const { timestamp, merchantId, orderId, amount, currency } = params;
+
+    // HPP hash is ALWAYS: timestamp.merchantid.orderid.amount.currency
+    // Even when using OFFER_SAVE_CARD and PAYER_REF, they are NOT included in the hash
     const dataString = `${timestamp}.${merchantId}.${orderId}.${amount}.${currency}`;
+
     return generateSHA1Hash(dataString, sharedSecret);
 }
 
@@ -415,4 +423,44 @@ export function normalizeCardExpiry(cardDetails) {
     }
 
     return normalized;
+}
+
+/**
+ * Convert ISO 3166-1 numeric country code to alpha-2 code
+ * HPP uses numeric codes (e.g., "840"), but XML API uses alpha-2 codes (e.g., "US")
+ *
+ * @param {string} numericCode - ISO 3166-1 numeric country code (e.g., "840", "826")
+ * @returns {string} ISO 3166-1 alpha-2 country code (e.g., "US", "GB")
+ */
+export function convertCountryCodeToAlpha2(numericCode) {
+    const countryCodeMap = {
+        '036': 'AU', // Australia
+        '124': 'CA', // Canada
+        '276': 'DE', // Germany
+        '372': 'IE', // Ireland
+        '826': 'GB', // United Kingdom
+        '840': 'US', // United States
+        '250': 'FR', // France
+        '380': 'IT', // Italy
+        '724': 'ES', // Spain
+        '528': 'NL', // Netherlands
+        '056': 'BE', // Belgium
+        '208': 'DK', // Denmark
+        '246': 'FI', // Finland
+        '578': 'NO', // Norway
+        '752': 'SE', // Sweden
+        '756': 'CH', // Switzerland
+        '040': 'AT', // Austria
+        '620': 'PT', // Portugal
+        '616': 'PL', // Poland
+        '203': 'CZ', // Czech Republic
+    };
+
+    // If already alpha-2 (2 characters), return as-is
+    if (numericCode && numericCode.length === 2) {
+        return numericCode.toUpperCase();
+    }
+
+    // Convert numeric to alpha-2
+    return countryCodeMap[numericCode] || 'US'; // Default to US if not found
 }

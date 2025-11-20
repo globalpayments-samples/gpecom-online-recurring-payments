@@ -212,13 +212,37 @@
 
                         <!-- Payment Method Section -->
                         <div style="margin-bottom: 24px;">
+                            <h3 class="gp-card-title" style="font-size: 18px; margin-bottom: 12px;">Payment Method</h3>
+
                             <div class="gp-alert gp-alert-info" style="margin-bottom: 16px;">
-                                <strong>Note:</strong> You will be redirected to Global Payments' secure payment page to enter your card details. An initial payment will be processed to validate your payment method, and the recurring schedule will start on your selected start date.
+                                <strong>Test Mode:</strong> This is a test environment. Use test card numbers only. An initial payment will be processed to validate your payment method.
+                            </div>
+
+                            <div class="gp-form-group">
+                                <label for="card-number" class="gp-label">Card Number:</label>
+                                <input type="text" id="card-number" name="card_number" class="gp-input" placeholder="4263970000005262" maxlength="19" required>
+                            </div>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="card-expiry" class="gp-label">Expiry Date (MM/YY):</label>
+                                    <input type="text" id="card-expiry" name="card_expiry" class="gp-input" placeholder="12/25" maxlength="5" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="card-cvv" class="gp-label">CVV:</label>
+                                    <input type="text" id="card-cvv" name="card_cvv" class="gp-input" placeholder="123" maxlength="4" required>
+                                </div>
+                            </div>
+
+                            <div class="gp-form-group">
+                                <label for="card-name" class="gp-label">Cardholder Name:</label>
+                                <input type="text" id="card-name" name="card_name" class="gp-input" placeholder="John Smith">
                             </div>
                         </div>
 
                         <button type="submit" class="gp-button gp-button-primary gp-button-full">
-                            Continue to Secure Payment
+                            Set Up Recurring Payment
                         </button>
                     </form>
 

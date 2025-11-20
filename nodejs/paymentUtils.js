@@ -27,7 +27,8 @@ import {
     getXMLAPIEndpoint,
     verifyResponseHash,
     parseErrorResponse,
-    normalizeCardExpiry
+    normalizeCardExpiry,
+    convertCountryCodeToAlpha2
 } from './xmlApiUtils.js';
 
 /**
@@ -219,8 +220,8 @@ export async function createOrUpdateCustomer(config, customerData) {
                     county: sanitizeAlphanumeric(address.state || '', 40),
                     postcode: sanitizePostalCode(address.billing_zip || ''),
                     country: {
-                        _: address.country || 'US',
-                        $: { code: address.country || 'US' }
+                        _: convertCountryCodeToAlpha2(address.country) || 'US',
+                        $: { code: convertCountryCodeToAlpha2(address.country) || 'US' }
                     }
                 } : undefined,
                 phonenumbers: phone ? {

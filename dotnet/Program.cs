@@ -31,10 +31,11 @@ public class Program
         ConfigureGlobalPaymentsSDK();
 
         ConfigureEndpoints(app);
-        
+        ConfigureRecurringEndpoint(app);
+
         var port = System.Environment.GetEnvironmentVariable("PORT") ?? "8000";
         app.Urls.Add($"http://0.0.0.0:{port}");
-        
+
         app.Run();
     }
 

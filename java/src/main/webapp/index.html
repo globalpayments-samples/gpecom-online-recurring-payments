@@ -37,106 +37,67 @@
         <!-- Tabs -->
         <div class="gp-tabs">
             <div class="gp-tab-list">
-                <button class="gp-tab-button active" data-tab="payment-form">Payment Form</button>
-                <button class="gp-tab-button" data-tab="tokenization">Tokenization</button>
-                <button class="gp-tab-button" data-tab="webhooks">Webhooks</button>
+                <button class="gp-tab-button active" data-tab="payment-form-tab">Payment Form</button>
                 <button class="gp-tab-button" data-tab="recurring">Recurring Payments</button>
             </div>
 
             <!-- Payment Form Tab -->
-            <div class="gp-tab-content active" id="payment-form">
+            <div class="gp-tab-content active" id="payment-form-tab">
                 <div class="gp-card">
                     <div class="gp-card-header">
-                        <h2 class="gp-card-title">Credit Card Payment Form</h2>
+                        <h2 class="gp-card-title">Hosted Payment Page</h2>
                         <p class="gp-card-description">
-                            Secure payment processing using Global Payments tokenization with client-side form validation.
+                            Secure payment processing using Global Payments Hosted Payment Page (HPP) with PCI-compliant payment forms.
                         </p>
                     </div>
-                    
-                    <form id="payment-form" class="gp-form" action="/process-payment" method="POST">
+
+                    <form id="payment-form" class="gp-form">
                         <div class="gp-form-group">
                             <label for="amount" class="gp-label">Amount ($):</label>
-                            <input type="number" id="amount" name="amount" class="gp-input" min="0.01" step="0.01" value="10.00" required>
-                        </div>
-                        
-                        <div class="gp-form-group">
-                            <label for="billing_zip" class="gp-label">Billing Zip Code:</label>
-                            <input type="text" id="billing_zip" name="billing_zip" class="gp-input" placeholder="12345" required>
+                            <input type="number" id="amount" name="amount" class="gp-input" min="0.01" step="0.01" value="19.99" required>
                         </div>
 
                         <div class="gp-form-group">
-                            <label class="gp-label">Credit Card Information:</label>
-                            <div id="credit-card"></div>
+                            <label for="currency" class="gp-label">Currency:</label>
+                            <select id="currency" name="currency" class="gp-input">
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - British Pound</option>
+                            </select>
                         </div>
 
-                        <button type="submit" class="gp-button gp-button-primary gp-button-full">
-                            Process Payment
+                        <div class="gp-form-group">
+                            <label for="customer_email" class="gp-label">Email:</label>
+                            <input type="email" id="customer_email" name="customer_email" class="gp-input" placeholder="customer@example.com">
+                        </div>
+
+                        <div class="gp-form-group">
+                            <label for="billing_street1" class="gp-label">Billing Address:</label>
+                            <input type="text" id="billing_street1" name="billing_street1" class="gp-input" placeholder="123 Main St">
+                        </div>
+
+                        <div class="gp-form-row">
+                            <div class="gp-form-group">
+                                <label for="billing_city" class="gp-label">City:</label>
+                                <input type="text" id="billing_city" name="billing_city" class="gp-input" placeholder="New York">
+                            </div>
+
+                            <div class="gp-form-group">
+                                <label for="billing_postalcode" class="gp-label">Postal Code:</label>
+                                <input type="text" id="billing_postalcode" name="billing_postalcode" class="gp-input" placeholder="10001">
+                            </div>
+                        </div>
+
+                        <div class="gp-form-group">
+                            <label for="billing_country" class="gp-label">Country Code:</label>
+                            <input type="text" id="billing_country" name="billing_country" class="gp-input" placeholder="840" value="840">
+                            <small style="color: #666;">ISO 3166-1 numeric (e.g., 840 for USA, 826 for UK)</small>
+                        </div>
+
+                        <button type="submit" id="pay-button" class="gp-button gp-button-primary gp-button-full">
+                            Pay Now
                         </button>
                     </form>
-                </div>
-            </div>
-
-            <!-- Tokenization Tab -->
-            <div class="gp-tab-content" id="tokenization">
-                <div class="gp-card">
-                    <div class="gp-card-header">
-                        <h2 class="gp-card-title">Card Tokenization</h2>
-                        <p class="gp-card-description">
-                            Securely tokenize payment methods for future use without storing sensitive card data.
-                        </p>
-                    </div>
-                    
-                    <div class="gp-alert gp-alert-info">
-                        <strong>Info:</strong> Tokens can be stored securely and used for future transactions without handling raw card data.
-                    </div>
-
-                    <form id="tokenization-form" class="gp-form">
-                        <div class="gp-form-group">
-                            <label class="gp-label">Card Information for Tokenization:</label>
-                            <div id="credit-card-token"></div>
-                        </div>
-
-                        <button type="submit" class="gp-button gp-button-primary gp-button-full">
-                            Generate Token
-                        </button>
-                    </form>
-
-                    <div id="token-result" class="gp-hidden">
-                        <h3 class="gp-card-title gp-mt-lg">Generated Token:</h3>
-                        <div class="gp-code-block" id="token-display"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Webhooks Tab -->
-            <div class="gp-tab-content" id="webhooks">
-                <div class="gp-card">
-                    <div class="gp-card-header">
-                        <h2 class="gp-card-title">Webhook Integration</h2>
-                        <p class="gp-card-description">
-                            Configure and test webhook endpoints for real-time payment notifications.
-                        </p>
-                    </div>
-                    
-                    <div class="gp-code-block">
-// Example webhook handler
-app.post('/webhook', (req, res) => {
-    const signature = req.headers['x-gp-signature'];
-    const payload = req.body;
-    
-    // Verify webhook signature
-    if (verifySignature(payload, signature)) {
-        handlePaymentEvent(payload);
-        res.status(200).send('OK');
-    } else {
-        res.status(400).send('Invalid signature');
-    }
-});
-                    </div>
-
-                    <div class="gp-alert gp-alert-warning">
-                        <strong>Security:</strong> Always verify webhook signatures to ensure requests are from Global Payments.
-                    </div>
                 </div>
             </div>
 
@@ -146,36 +107,152 @@ app.post('/webhook', (req, res) => {
                     <div class="gp-card-header">
                         <h2 class="gp-card-title">Recurring Payments</h2>
                         <p class="gp-card-description">
-                            Set up subscription billing and recurring payment schedules.
+                            Set up subscription billing and recurring payment schedules using Global Payments XML API Payment Scheduler.
                         </p>
                     </div>
-                    
+
                     <form id="recurring-form" class="gp-form">
-                        <div class="gp-form-row">
-                            <div class="gp-form-group">
-                                <label for="subscription-amount" class="gp-label">Monthly Amount ($):</label>
-                                <input type="number" id="subscription-amount" name="subscription-amount" class="gp-input" min="1.00" step="0.01" value="29.99" required>
+                        <!-- Customer Information Section -->
+                        <div style="margin-bottom: 24px;">
+                            <h3 class="gp-card-title" style="font-size: 18px; margin-bottom: 12px;">Customer Information</h3>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="recurring-first-name" class="gp-label">First Name:</label>
+                                    <input type="text" id="recurring-first-name" name="first_name" class="gp-input" placeholder="John" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="recurring-last-name" class="gp-label">Last Name:</label>
+                                    <input type="text" id="recurring-last-name" name="last_name" class="gp-input" placeholder="Doe" required>
+                                </div>
                             </div>
-                            
-                            <div class="gp-form-group">
-                                <label for="billing-cycle" class="gp-label">Billing Cycle:</label>
-                                <select id="billing-cycle" name="billing-cycle" class="gp-select" required>
-                                    <option value="monthly">Monthly</option>
-                                    <option value="quarterly">Quarterly</option>
-                                    <option value="annually">Annually</option>
-                                </select>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="recurring-email" class="gp-label">Email:</label>
+                                    <input type="email" id="recurring-email" name="email" class="gp-input" placeholder="john.doe@example.com" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="recurring-phone" class="gp-label">Phone:</label>
+                                    <input type="tel" id="recurring-phone" name="phone" class="gp-input" placeholder="555-123-4567">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="gp-form-group">
-                            <label class="gp-label">Payment Method:</label>
-                            <div id="credit-card-recurring"></div>
+                        <!-- Billing Address Section -->
+                        <div style="margin-bottom: 24px;">
+                            <h3 class="gp-card-title" style="font-size: 18px; margin-bottom: 12px;">Billing Address</h3>
+
+                            <div class="gp-form-group">
+                                <label for="recurring-street-address" class="gp-label">Street Address:</label>
+                                <input type="text" id="recurring-street-address" name="street_address" class="gp-input" placeholder="1 Example Way">
+                            </div>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="recurring-city" class="gp-label">City:</label>
+                                    <input type="text" id="recurring-city" name="city" class="gp-input" placeholder="Jeffersonville">
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="recurring-state" class="gp-label">State:</label>
+                                    <input type="text" id="recurring-state" name="state" class="gp-input" placeholder="IN" maxlength="2">
+                                </div>
+                            </div>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="recurring-billing-zip" class="gp-label">Zip Code:</label>
+                                    <input type="text" id="recurring-billing-zip" name="billing_zip" class="gp-input" placeholder="47130" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="recurring-country" class="gp-label">Country:</label>
+                                    <select id="recurring-country" name="country" class="gp-select" required>
+                                        <option value="840" selected>United States (840)</option>
+                                        <option value="124">Canada (124)</option>
+                                        <option value="826">United Kingdom (826)</option>
+                                        <option value="036">Australia (036)</option>
+                                        <option value="276">Germany (276)</option>
+                                        <option value="372">Ireland (372)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subscription Details Section -->
+                        <div style="margin-bottom: 24px;">
+                            <h3 class="gp-card-title" style="font-size: 18px; margin-bottom: 12px;">Subscription Details</h3>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="subscription-amount" class="gp-label">Amount ($):</label>
+                                    <input type="number" id="subscription-amount" name="amount" class="gp-input" min="1.00" step="0.01" value="29.99" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="billing-cycle" class="gp-label">Billing Frequency:</label>
+                                    <select id="billing-cycle" name="frequency" class="gp-select" required>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="bi-weekly">Bi-Weekly (Every 2 weeks)</option>
+                                        <option value="monthly" selected>Monthly</option>
+                                        <option value="quarterly">Quarterly (Every 3 months)</option>
+                                        <option value="yearly">Yearly (Annually)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="gp-form-group">
+                                <label for="start-date" class="gp-label">Start Date:</label>
+                                <input type="date" id="start-date" name="start_date" class="gp-input" required>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method Section -->
+                        <div style="margin-bottom: 24px;">
+                            <h3 class="gp-card-title" style="font-size: 18px; margin-bottom: 12px;">Payment Method</h3>
+
+                            <div class="gp-alert gp-alert-info" style="margin-bottom: 16px;">
+                                <strong>Test Mode:</strong> This is a test environment. Use test card numbers only. An initial payment will be processed to validate your payment method.
+                            </div>
+
+                            <div class="gp-form-group">
+                                <label for="card-number" class="gp-label">Card Number:</label>
+                                <input type="text" id="card-number" name="card_number" class="gp-input" placeholder="4263970000005262" maxlength="19" required>
+                            </div>
+
+                            <div class="gp-form-row">
+                                <div class="gp-form-group">
+                                    <label for="card-expiry" class="gp-label">Expiry Date (MM/YY):</label>
+                                    <input type="text" id="card-expiry" name="card_expiry" class="gp-input" placeholder="12/25" maxlength="5" required>
+                                </div>
+
+                                <div class="gp-form-group">
+                                    <label for="card-cvv" class="gp-label">CVV:</label>
+                                    <input type="text" id="card-cvv" name="card_cvv" class="gp-input" placeholder="123" maxlength="4" required>
+                                </div>
+                            </div>
+
+                            <div class="gp-form-group">
+                                <label for="card-name" class="gp-label">Cardholder Name:</label>
+                                <input type="text" id="card-name" name="card_name" class="gp-input" placeholder="John Smith">
+                            </div>
                         </div>
 
                         <button type="submit" class="gp-button gp-button-primary gp-button-full">
-                            Set Up Subscription
+                            Set Up Recurring Payment
                         </button>
                     </form>
+
+                    <!-- Result Display -->
+                    <div id="recurring-result" class="gp-hidden" style="margin-top: 24px;">
+                        <div class="gp-alert gp-alert-success">
+                            <h3 class="gp-card-title" style="margin-top: 0;">Recurring Payment Schedule Created!</h3>
+                            <div id="recurring-result-details"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -208,6 +285,6 @@ app.post('/webhook', (req, res) => {
         </div>
     </footer>
 
-    <script src="https://globalpayments-samples.github.io/js/script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

@@ -289,7 +289,7 @@ app.post('/hpp-recurring-request', async (req, res) => {
         const payerRef = `CUS${timestampMs.substring(timestampMs.length - 10)}`;
         const paymentRef = `PMT${timestampMs.substring(timestampMs.length - 10)}`;
 
-        // Generate hash
+        // Generate hash (HPP hash does NOT include payerRef - it's always just these 5 fields)
         const hash = generateHPPHash({
             timestamp,
             merchantId: config.merchantId,
@@ -685,18 +685,118 @@ app.post('/hpp-recurring-response', async (req, res) => {
 });
 
 /**
- * Recurring payment setup endpoint
- * Handles the complete recurring payment setup workflow
+ * Recurring payment setup endpoint using XML API
+ * Handles the complete recurring payment setup workflow using direct XML API calls
+ * This endpoint processes card details directly and creates recurring schedules
+ *
+ * Request body parameters:
+ * - amount (number, required): Payment amount in dollars
+ * - currency (string, optional): Currency code (default: 'USD')
+ * - frequency (string, required): Billing frequency (weekly, bi-weekly, monthly, quarterly, yearly)
+ * - start_date (string, required): Start date in ISO format (YYYY-MM-DD)
+ * - first_name, last_name (string, required): Customer name
+ * - email (string, required): Customer email
+ * - phone (string, optional): Customer phone
+ * - street_address, city, state, billing_zip, country (string): Address information
+ * - card_number (string, required): Card number
+ * - card_expiry (string, required): Card expiry in MM/YY format
+ * - card_cvv (string, required): Card CVV
+ * - card_name (string, optional): Cardholder name
  */
 app.post('/recurring-setup', async (req, res) => {
     try {
         const config = validateConfig();
-        const data = req.body;
+        const {
+            amount,
+            currency = 'USD',
+            frequency,
+            start_date,
+            // Customer data
+            first_name,
+            last_name,
+            email,
+            phone,
+            // Billing data
+            street_address,
+            city,
+            state,
+            billing_zip,
+            country = 'US',
+            // Card data
+            card_number,
+            card_expiry,
+            card_cvv,
+            card_name
+        } = req.body;
 
-        console.log('Processing recurring payment setup...');
+        // Validate required fields
+        if (!amount || amount <= 0) {
+            return sendErrorResponse(res, 400, 'Valid amount is required', 'INVALID_AMOUNT');
+        }
 
-        // Process complete recurring payment setup
-        const result = await processRecurringPaymentSetup(config, data);
+        if (!frequency) {
+            return sendErrorResponse(res, 400, 'Frequency is required', 'MISSING_FREQUENCY');
+        }
+
+        if (!start_date) {
+            return sendErrorResponse(res, 400, 'Start date is required', 'MISSING_START_DATE');
+        }
+
+        if (!first_name || !last_name || !email) {
+            return sendErrorResponse(res, 400, 'Customer information (first_name, last_name, email) is required', 'MISSING_CUSTOMER_INFO');
+        }
+
+        if (!card_number || !card_expiry || !card_cvv) {
+            return sendErrorResponse(res, 400, 'Card information (card_number, card_expiry, card_cvv) is required', 'MISSING_CARD_INFO');
+        }
+
+        console.log('Processing XML API recurring payment setup...');
+
+        // Parse card expiry (MM/YY format)
+        const expiryParts = card_expiry.split('/');
+        if (expiryParts.length !== 2) {
+            return sendErrorResponse(res, 400, 'Invalid card expiry format. Expected MM/YY', 'INVALID_EXPIRY');
+        }
+
+        const cardDetails = {
+            number: card_number.replace(/\s/g, ''), // Remove spaces
+            expmonth: expiryParts[0].trim().padStart(2, '0'),
+            expyear: expiryParts[1].trim(),
+            cvn: card_cvv,
+            chname: card_name || `${first_name} ${last_name}`,
+            type: 'VISA' // Will be auto-detected by Global Payments
+        };
+
+        const customerData = {
+            first_name,
+            last_name,
+            email,
+            phone,
+            street_address,
+            city,
+            state,
+            billing_zip,
+            country
+        };
+
+        const billingData = {
+            street_address,
+            city,
+            state,
+            billing_zip,
+            country
+        };
+
+        // Process complete recurring payment setup using XML API
+        const result = await processRecurringPaymentSetup(config, {
+            cardDetails,
+            amount,
+            currency,
+            frequency,
+            startDate: start_date,
+            customerData,
+            billingData
+        });
 
         sendSuccessResponse(res, result, 'Recurring payment setup completed successfully');
 
