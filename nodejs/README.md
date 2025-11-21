@@ -153,28 +153,32 @@ Returns configuration for client-side initialization
 **Note:** The shared secret is NEVER sent to the client.
 
 ### `POST /process-payment`
-Process one-time or recurring payment
+Process one-time payment (tokenized)
 
-**Request Body (One-Time Payment):**
+**Request Body:**
 ```json
 {
   "payment_token": "TOKEN_xxx",
   "amount": 29.99,
   "currency": "USD",
-  "billing_zip": "47130",
-  "is_recurring": false
+  "billing_zip": "47130"
 }
 ```
 
-**Request Body (Recurring Payment):**
+### `POST /recurring-setup`
+Set up recurring payment with direct card details
+
+**Request Body:**
 ```json
 {
-  "payment_token": "TOKEN_xxx",
+  "card_number": "4263970000005262",
+  "card_expiry": "12/25",
+  "card_cvv": "123",
+  "card_name": "John Doe",
   "amount": 29.99,
   "currency": "USD",
-  "is_recurring": true,
   "frequency": "monthly",
-  "start_date": "2025-11-05",
+  "start_date": "2024-12-01",
   "first_name": "John",
   "last_name": "Doe",
   "email": "john.doe@example.com",
@@ -183,7 +187,7 @@ Process one-time or recurring payment
   "city": "Jeffersonville",
   "state": "IN",
   "billing_zip": "47130",
-  "country": "US"
+  "billing_country": "840"
 }
 ```
 

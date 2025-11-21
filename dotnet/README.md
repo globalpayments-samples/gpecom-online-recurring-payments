@@ -1,108 +1,250 @@
-# .NET Card Payment Example
+# .NET XML API - Recurring Payments Implementation
 
-This example demonstrates card payment processing using ASP.NET Core and the Global Payments SDK.
+This .NET application demonstrates recurring payment processing using the **Global Payments XML API** with the Payment Scheduler service.
+
+## Features
+
+- One-time payment processing using Global Payments SDK
+- Recurring/subscription payments with XML API
+- Customer and payment method storage using Card Storage API
+- StoredCredential implementation for recurring transactions
+- Multiple billing frequencies: Weekly, Bi-Weekly, Monthly, Quarterly, Yearly
+- Initial payment validation before schedule creation
 
 ## Requirements
 
 - .NET 6.0 or later
-- Global Payments account and API credentials
+- Global Payments XML API credentials:
+  - Merchant ID
+  - Shared Secret
+  - Account name (default: 'internet')
 
 ## Project Structure
 
-- `Program.cs` - Main application file containing server setup and payment processing
-- `wwwroot/index.html` - Client-side payment form
-- `.env.sample` - Template for environment variables
-- `run.sh` - Convenience script to run the application
-- `appsettings.json` - Application configuration file
+```
+dotnet/
+├── XmlApiUtils.cs              # XML API utilities
+├── PaymentUtils.cs             # Payment processing workflow
+├── Program.cs                  # Main application with endpoints
+├── wwwroot/
+│   ├── index.html              # Frontend payment form
+│   └── script.js               # Client-side JavaScript
+├── appsettings.json            # Application configuration
+├── .env.sample                 # Environment variable template
+├── run.sh                      # Shell script to run the app
+└── README.md                   # This file
+```
 
-## Setup
+## Setup Instructions
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments credentials:
-   ```
-   PUBLIC_API_KEY=pk_test_xxx
-   SECRET_API_KEY=sk_test_xxx
-   ```
-4. Install dependencies:
-   ```bash
-   dotnet restore
-   ```
-5. Run the application:
-   ```bash
-   ./run.sh
-   ```
-   Or manually:
-   ```bash
-   dotnet run
-   ```
+### 1. Install Dependencies
 
-## Implementation Details
+```bash
+cd dotnet
+dotnet restore
+```
 
-### Server Setup
-The application uses ASP.NET Core's minimal API approach to create a lightweight web server that:
-- Serves static files from wwwroot directory
-- Processes payment requests
-- Provides configuration endpoint for client-side SDK
+Dependencies:
+- GlobalPayments.Api 14.2.20
+- DotNetEnv 3.1.1
 
-### SDK Configuration
-The Global Payments SDK is configured using environment variables and the PorticoConfig class:
-- Loads credentials from .env file
-- Sets up service URL for API communication
-- Configures developer identification
+### 2. Configure Environment Variables
 
-### Payment Processing
-Payment processing flow:
-1. Client submits payment token and billing zip
-2. Server creates CreditCardData with token
-3. Creates Address with postal code
-4. Processes $10 USD charge
-5. Returns success/error response
+Copy `.env.sample` to `.env`:
 
-### Error Handling
-Implements comprehensive error handling:
-- Catches and processes API exceptions
-- Returns appropriate HTTP status codes
-- Provides meaningful error messages
+```bash
+cp .env.sample .env
+```
+
+Edit `.env` with your credentials:
+
+```env
+# XML API Credentials
+MERCHANT_ID=your_merchant_id
+SHARED_SECRET=your_shared_secret
+ACCOUNT=internet
+
+# Environment
+ENVIRONMENT=sandbox
+
+# Server Port
+PORT=8000
+```
+
+### 3. Run the Application
+
+```bash
+./run.sh
+```
+
+Or manually:
+
+```bash
+dotnet run
+```
+
+The server will start at `http://localhost:8000`
 
 ## API Endpoints
 
-### GET /config
-Returns public API key for client-side SDK initialization.
+### `GET /config`
+Returns configuration for client-side initialization
 
-Response:
+**Response:**
 ```json
 {
-    "publicApiKey": "pk_test_xxx"
+  "success": true,
+  "data": {
+    "publicApiKey": "pk_xxx"
+  }
 }
 ```
 
-### POST /process-payment
-Processes a payment using the provided token and billing information.
+### `POST /process-payment`
+Process one-time payment (tokenized)
 
-Request Parameters:
-- `payment_token` (string, required) - Token from client-side SDK
-- `billing_zip` (string, required) - Billing postal code
+**Request Parameters:**
+- `payment_token` (required) - Payment token from client
+- `billing_zip` (required) - Billing postal code
+- `amount` (required) - Payment amount
 
-Response (Success):
+### `POST /recurring-setup`
+Set up recurring payment with direct card details
+
+**Request Body (JSON):**
 ```json
 {
-    "message": "Payment successful! Transaction ID: xxx"
+  "card_number": "4263970000005262",
+  "card_expiry": "12/25",
+  "card_cvv": "123",
+  "card_name": "John Doe",
+  "amount": 29.99,
+  "currency": "USD",
+  "frequency": "monthly",
+  "start_date": "2024-12-01",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@example.com",
+  "phone": "555-123-4567",
+  "billing_zip": "47130",
+  "billing_country": "840"
 }
 ```
 
-Response (Error):
+**Response (Success):**
 ```json
 {
-    "detail": "Error message"
+  "success": true,
+  "message": "Recurring payment setup completed successfully",
+  "data": {
+    "customer": {
+      "payerRef": "CUS_xxx",
+      "name": "John Doe",
+      "email": "john.doe@example.com"
+    },
+    "payment": {
+      "transactionId": "xxx",
+      "orderId": "INIT_xxx",
+      "authCode": "12345",
+      "amount": 29.99,
+      "currency": "USD"
+    },
+    "schedule": {
+      "scheduleRef": "SCH_xxx",
+      "scheduleText": "Monthly on the 21st",
+      "frequency": "monthly",
+      "startDate": "2024-12-01",
+      "amount": 29.99,
+      "currency": "USD"
+    }
+  }
 }
 ```
+
+## XML API Integration
+
+### 4-Step Workflow
+
+1. **Customer Creation** (`payer-new`)
+   - Creates customer in Card Storage API
+   - Stores name, email, phone, address
+
+2. **Card Storage** (`card-new`)
+   - Creates tokenized card reference
+   - Links card to customer
+
+3. **Initial Payment** (`receipt-in`)
+   - Processes first payment
+   - Marks as recurring (sequence: first)
+
+4. **Schedule Creation** (`schedule-new`)
+   - Creates recurring schedule
+   - Sets frequency and amount
+
+### Authentication
+
+All XML API requests use SHA-1 hash-based authentication:
+
+1. Concatenate request fields per API specification
+2. Generate SHA-1 hash
+3. Append shared secret and hash again
+4. Include final hash in request
+
+See `XmlApiUtils.cs` for implementation details.
+
+## Testing
+
+### Test Cards (Sandbox)
+
+| Card Number | Type | CVV | Expiry |
+|-------------|------|-----|--------|
+| 4263970000005262 | Visa | 123 | 12/25 |
+| 5425230000004415 | Mastercard | 123 | 12/25 |
+| 374101000000608 | Amex | 1234 | 12/25 |
+
+### Testing Recurring Payments
+
+1. Navigate to the Recurring Payments tab
+2. Fill in customer information
+3. Enter test card details
+4. Set subscription amount and frequency
+5. Click "Set Up Recurring Payment"
+
+Expected result: All 4 XML API calls succeed, schedule is created.
 
 ## Security Considerations
 
-This example demonstrates basic implementation. For production use, consider:
-- Implementing additional input validation
-- Adding request rate limiting
-- Including security headers
-- Implementing proper logging
-- Adding payment fraud prevention measures
+Before deploying to production:
+
+- Update `ENVIRONMENT=production` in `.env`
+- Use production XML API credentials
+- Implement proper client-side tokenization
+- Add input validation and sanitization
+- Set up HTTPS/TLS
+- Review PCI DSS compliance requirements
+
+**Never** store raw card data on your servers.
+
+## Troubleshooting
+
+**Error: "Authentication failed"**
+- Verify Merchant ID and Shared Secret
+- Check environment (sandbox vs production)
+
+**Error: "Schedule creation failed"**
+- Ensure start date is in the future
+- Verify customer and card were created successfully
+
+**Build Errors**
+- Ensure .NET 6.0+ is installed
+- Run `dotnet restore` to refresh dependencies
+
+## Additional Resources
+
+- [Global Payments Developer Portal](https://developer.globalpay.com)
+- [XML API Documentation](https://developer.globalpay.com/ecommerce/api)
+- [Payment Scheduler Guide](https://developer.globalpay.com/ecommerce/api/payment-scheduler)
+
+## License
+
+This project is provided as-is for demonstration purposes.
