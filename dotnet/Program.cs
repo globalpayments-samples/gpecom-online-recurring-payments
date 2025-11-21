@@ -189,4 +189,184 @@ public class Program
             }
         });
     }
+
+    /// <summary>
+    /// Configures the recurring payment setup endpoint that handles XML API recurring payments.
+    /// </summary>
+    /// <param name="app">The web application to configure</param>
+    private static void ConfigureRecurringEndpoint(WebApplication app)
+    {
+        app.MapPost("/recurring-setup", async (HttpContext context) =>
+        {
+            try
+            {
+                // Read and parse JSON request body
+                using var reader = new StreamReader(context.Request.Body);
+                var body = await reader.ReadToEndAsync();
+                var jsonRequest = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(body);
+
+                if (jsonRequest == null)
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Invalid request body",
+                        error = new {
+                            code = "INVALID_REQUEST",
+                            details = "Request body must be valid JSON"
+                        }
+                    });
+                }
+
+                // Validate required card fields
+                if (!jsonRequest.ContainsKey("card_number") || !jsonRequest.ContainsKey("card_expiry") || !jsonRequest.ContainsKey("card_cvv"))
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Card information required",
+                        error = new {
+                            code = "MISSING_CARD_INFO",
+                            details = "Card number, expiry, and CVV are required"
+                        }
+                    });
+                }
+
+                // Validate required recurring fields
+                if (!jsonRequest.ContainsKey("amount") || !jsonRequest.ContainsKey("frequency") || !jsonRequest.ContainsKey("start_date"))
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Recurring payment details required",
+                        error = new {
+                            code = "MISSING_RECURRING_INFO",
+                            details = "Amount, frequency, and start date are required"
+                        }
+                    });
+                }
+
+                // Validate required customer fields
+                if (!jsonRequest.ContainsKey("first_name") || !jsonRequest.ContainsKey("last_name") || !jsonRequest.ContainsKey("email"))
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Customer information required",
+                        error = new {
+                            code = "MISSING_CUSTOMER_INFO",
+                            details = "First name, last name, and email are required"
+                        }
+                    });
+                }
+
+                // Parse card expiry (MM/YY format)
+                var cardExpiry = jsonRequest["card_expiry"].GetString() ?? "";
+                var expiryParts = cardExpiry.Split('/');
+                if (expiryParts.Length != 2)
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Invalid card expiry format. Expected MM/YY",
+                        error = new {
+                            code = "INVALID_EXPIRY",
+                            details = "Card expiry must be in MM/YY format"
+                        }
+                    });
+                }
+
+                var expMonth = expiryParts[0].Trim();
+                var expYear = expiryParts[1].Trim();
+
+                // Ensure month is 2 digits
+                if (expMonth.Length == 1)
+                    expMonth = "0" + expMonth;
+
+                // Prepare card details
+                var cardDetails = new Dictionary<string, string>
+                {
+                    { "number", (jsonRequest["card_number"].GetString() ?? "").Replace(" ", "") },
+                    { "expmonth", expMonth },
+                    { "expyear", expYear },
+                    { "cvn", jsonRequest["card_cvv"].GetString() ?? "" }
+                };
+
+                // Get card name or construct from customer name
+                var cardName = jsonRequest.ContainsKey("card_name") && jsonRequest["card_name"].ValueKind != System.Text.Json.JsonValueKind.Null
+                    ? jsonRequest["card_name"].GetString()
+                    : $"{jsonRequest["first_name"].GetString()} {jsonRequest["last_name"].GetString()}";
+                cardDetails["chname"] = cardName ?? "";
+
+                // Prepare customer data
+                var customerData = new Dictionary<string, string>
+                {
+                    { "first_name", jsonRequest["first_name"].GetString() ?? "" },
+                    { "last_name", jsonRequest["last_name"].GetString() ?? "" },
+                    { "email", jsonRequest["email"].GetString() ?? "" },
+                    { "phone", jsonRequest.ContainsKey("phone") ? jsonRequest["phone"].GetString() ?? "" : "" },
+                    { "street_address", jsonRequest.ContainsKey("street_address") ? jsonRequest["street_address"].GetString() ?? "" : "" },
+                    { "city", jsonRequest.ContainsKey("city") ? jsonRequest["city"].GetString() ?? "" : "" },
+                    { "state", jsonRequest.ContainsKey("state") ? jsonRequest["state"].GetString() ?? "" : "" },
+                    { "billing_zip", jsonRequest.ContainsKey("billing_zip") ? jsonRequest["billing_zip"].GetString() ?? "" : "" },
+                    { "country", jsonRequest.ContainsKey("billing_country") ? jsonRequest["billing_country"].GetString() ?? "" : "" }
+                };
+
+                // Prepare billing data
+                var billingData = new Dictionary<string, string>
+                {
+                    { "billing_zip", jsonRequest.ContainsKey("billing_zip") ? jsonRequest["billing_zip"].GetString() ?? "" : "" },
+                    { "country", jsonRequest.ContainsKey("billing_country") ? jsonRequest["billing_country"].GetString() ?? "" : "" },
+                    { "street_address", jsonRequest.ContainsKey("street_address") ? jsonRequest["street_address"].GetString() ?? "" : "" },
+                    { "city", jsonRequest.ContainsKey("city") ? jsonRequest["city"].GetString() ?? "" : "" },
+                    { "state", jsonRequest.ContainsKey("state") ? jsonRequest["state"].GetString() ?? "" : "" }
+                };
+
+                // Set currency default
+                var currency = jsonRequest.ContainsKey("currency") ? jsonRequest["currency"].GetString() ?? "USD" : "USD";
+
+                // Prepare configuration
+                var config = new Dictionary<string, string>
+                {
+                    { "merchantId", System.Environment.GetEnvironmentVariable("MERCHANT_ID") ?? "" },
+                    { "sharedSecret", System.Environment.GetEnvironmentVariable("SHARED_SECRET") ?? "" },
+                    { "account", System.Environment.GetEnvironmentVariable("ACCOUNT") ?? "internet" },
+                    { "environment", System.Environment.GetEnvironmentVariable("ENVIRONMENT") ?? "sandbox" }
+                };
+
+                // Prepare payment data
+                var paymentData = new Dictionary<string, object>
+                {
+                    { "cardDetails", cardDetails },
+                    { "amount", jsonRequest["amount"].GetDecimal() },
+                    { "currency", currency },
+                    { "frequency", jsonRequest["frequency"].GetString() ?? "" },
+                    { "startDate", jsonRequest["start_date"].GetString() ?? "" },
+                    { "customerData", customerData },
+                    { "billingData", billingData }
+                };
+
+                // Process recurring payment setup
+                var result = await PaymentUtils.ProcessRecurringPaymentSetup(config, paymentData);
+
+                // Send success response
+                return Results.Ok(new {
+                    success = true,
+                    message = "Recurring payment setup completed successfully",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log the error
+                Console.WriteLine($"Error processing recurring setup: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+
+                // Send error response
+                return Results.Json(new {
+                    success = false,
+                    message = ex.Message,
+                    error = new {
+                        code = "PROCESSING_ERROR",
+                        details = ex.Message
+                    }
+                }, statusCode: 500);
+            }
+        });
+    }
 }
