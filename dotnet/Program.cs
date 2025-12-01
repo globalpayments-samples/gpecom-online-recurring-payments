@@ -30,7 +30,6 @@ public class Program
         // Configure the SDK on startup
         ConfigureGlobalPaymentsSDK();
 
-        ConfigureEndpoints(app);
         ConfigureRecurringEndpoint(app);
 
         var port = System.Environment.GetEnvironmentVariable("PORT") ?? "8000";
@@ -41,154 +40,15 @@ public class Program
 
     /// <summary>
     /// Configures the Global Payments SDK with necessary credentials and settings.
-    /// This must be called before processing any payments.
+    /// For XML API recurring payments, configuration is handled per-request.
+    /// This method is kept for potential future SDK-based operations.
     /// </summary>
     private static void ConfigureGlobalPaymentsSDK()
     {
-        ServicesContainer.ConfigureService(new PorticoConfig
-        {
-            SecretApiKey = System.Environment.GetEnvironmentVariable("SECRET_API_KEY"),
-            DeveloperId = "000000",
-            VersionNumber = "0000",
-            ServiceUrl = "https://cert.api2.heartlandportico.com"
-        });
+        // XML API uses direct HTTP requests with per-request configuration
+        // No global SDK configuration needed for recurring payments
     }
 
-    /// <summary>
-    /// Configures the application's HTTP endpoints for payment processing.
-    /// </summary>
-    /// <param name="app">The web application to configure</param>
-    private static void ConfigureEndpoints(WebApplication app)
-    {
-        // Configure HTTP endpoints
-        app.MapGet("/config", () => Results.Ok(new
-        { 
-            success = true,
-            data = new {
-                publicApiKey = System.Environment.GetEnvironmentVariable("PUBLIC_API_KEY")
-            }
-        }));
-
-        ConfigurePaymentEndpoint(app);
-    }
-
-    /// <summary>
-    /// Sanitizes postal code input by removing invalid characters.
-    /// </summary>
-    /// <param name="postalCode">The postal code to sanitize. Can be null.</param>
-    /// <returns>
-    /// A sanitized postal code containing only alphanumeric characters and hyphens,
-    /// limited to 10 characters. Returns empty string if input is null or empty.
-    /// </returns>
-    private static string SanitizePostalCode(string postalCode)
-    {
-        if (string.IsNullOrEmpty(postalCode)) return string.Empty;
-        
-        // Remove any characters that aren't alphanumeric or hyphen
-        var sanitized = new string(postalCode.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
-        
-        // Limit length to 10 characters
-        return sanitized.Length > 10 ? sanitized[..10] : sanitized;
-    }
-
-    /// <summary>
-    /// Configures the payment processing endpoint that handles card transactions.
-    /// </summary>
-    /// <param name="app">The web application to configure</param>
-    private static void ConfigurePaymentEndpoint(WebApplication app)
-    {
-        app.MapPost("/process-payment", async (HttpContext context) =>
-        {
-            // Parse form data from the request
-            var form = await context.Request.ReadFormAsync();
-            var billingZip = form["billing_zip"].ToString();
-            var token = form["payment_token"].ToString();
-            var amountStr = form["amount"].ToString();
-
-            // Validate required fields are present
-            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(billingZip) || string.IsNullOrEmpty(amountStr))
-            {
-                return Results.BadRequest(new {
-                    success = false,
-                    message = "Payment processing failed",
-                    error = new {
-                        code = "VALIDATION_ERROR",
-                        details = "Missing required fields"
-                    }
-                });
-            }
-
-            // Validate and parse amount
-            if (!decimal.TryParse(amountStr, out var amount) || amount <= 0)
-            {
-                return Results.BadRequest(new {
-                    success = false,
-                    message = "Payment processing failed",
-                    error = new {
-                        code = "VALIDATION_ERROR",
-                        details = "Amount must be a positive number"
-                    }
-                });
-            }
-
-            // Initialize payment data using tokenized card information
-            var card = new CreditCardData
-            {
-                Token = token
-            };
-
-            // Create billing address for AVS verification
-            var address = new Address
-            {
-                PostalCode = SanitizePostalCode(billingZip)
-            };
-
-            try
-            {
-                // Process the payment transaction using the provided amount
-                var response = card.Charge(amount)
-                    .WithAllowDuplicates(true)
-                    .WithCurrency("USD")
-                    .WithAddress(address)
-                    .Execute();
-
-                // Verify transaction was successful
-                if (response.ResponseCode != "00")
-                {
-                    return Results.BadRequest(new {
-                        success = false,
-                        message = "Payment processing failed",
-                        error = new {
-                            code = "PAYMENT_DECLINED",
-                            details = response.ResponseMessage
-                        }
-                    });
-                }
-
-                // Return success response with transaction ID
-                return Results.Ok(new
-                {
-                    success = true,
-                    message = $"Payment successful! Transaction ID: {response.TransactionId}",
-                    data = new {
-                        transactionId = response.TransactionId
-                    }
-                });
-            } 
-            catch (ApiException ex)
-            {
-                // Handle payment processing errors
-                return Results.BadRequest(new {
-                    success = false,
-                    message = "Payment processing failed",
-                    error = new {
-                        code = "API_ERROR",
-                        details = ex.Message
-                    }
-                });
-            }
-        });
-    }
 
     /// <summary>
     /// Configures the recurring payment setup endpoint that handles XML API recurring payments.
