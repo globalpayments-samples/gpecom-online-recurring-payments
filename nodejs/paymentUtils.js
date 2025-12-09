@@ -124,20 +124,14 @@ export async function processOneTimePayment(config, paymentData) {
         const xmlRequest = buildXMLRequest(requestData);
         const endpoint = getXMLAPIEndpoint(environment);
 
-        console.log('📤 Sending XML request to:', endpoint);
-        console.log('📤 Request XML:', xmlRequest.substring(0, 500) + '...');
-
         const response = await axios.post(endpoint, xmlRequest, {
             headers: {
                 'Content-Type': 'application/xml'
             }
         });
 
-        console.log('📥 Response XML:', response.data.substring(0, 500) + '...');
-
         // Parse response
         const parsedResponse = await parseXMLResponse(response.data);
-        console.log('📥 Parsed response:', JSON.stringify(parsedResponse, null, 2));
 
         // Verify response hash (temporarily disabled for debugging)
         // if (!verifyResponseHash(parsedResponse, sharedSecret)) {
@@ -236,19 +230,14 @@ export async function createOrUpdateCustomer(config, customerData) {
         const xmlRequest = buildXMLRequest(requestData);
         const endpoint = getXMLAPIEndpoint(environment);
 
-        console.log('📤 [Customer] Sending XML request to:', endpoint);
-
         const response = await axios.post(endpoint, xmlRequest, {
             headers: {
                 'Content-Type': 'application/xml'
             }
         });
 
-        console.log('📥 [Customer] Response received');
-
         // Parse response
         const parsedResponse = await parseXMLResponse(response.data);
-        console.log('📥 [Customer] Parsed response:', JSON.stringify(parsedResponse, null, 2));
 
         // Verify response hash (temporarily disabled for debugging)
         // if (!verifyResponseHash(parsedResponse, sharedSecret)) {
@@ -359,19 +348,14 @@ export async function storePaymentMethodWithInitialPayment(config, paymentData) 
         const xmlRequest = buildXMLRequest(requestData);
         const endpoint = getXMLAPIEndpoint(environment);
 
-        console.log('📤 [Initial Payment] Sending XML request to:', endpoint);
-
         const response = await axios.post(endpoint, xmlRequest, {
             headers: {
                 'Content-Type': 'application/xml'
             }
         });
 
-        console.log('📥 [Initial Payment] Response received');
-
         // Parse response
         const parsedResponse = await parseXMLResponse(response.data);
-        console.log('📥 [Initial Payment] Parsed response:', JSON.stringify(parsedResponse, null, 2));
 
         // Verify response hash (temporarily disabled for debugging)
         // if (!verifyResponseHash(parsedResponse, sharedSecret)) {
@@ -455,24 +439,16 @@ export async function createCardReference(config, cardData) {
         const xmlRequest = buildXMLRequest(requestData);
         const endpoint = getXMLAPIEndpoint(environment);
 
-        console.log('📤 [Card] Sending XML request to:', endpoint);
-
         const response = await axios.post(endpoint, xmlRequest, {
             headers: {
                 'Content-Type': 'application/xml'
             }
         });
 
-        console.log('📥 [Card] Response received');
-
         // Parse response
         const parsedResponse = await parseXMLResponse(response.data);
-        console.log('📥 [Card] Parsed response:', JSON.stringify(parsedResponse, null, 2));
 
         // Verify response hash (temporarily disabled for debugging)
-        // if (!verifyResponseHash(parsedResponse, sharedSecret)) {
-        //     console.warn('⚠️  [Card] Response hash verification failed - continuing for debugging');
-        // }
 
         // Check result (00 = success, 520 = card already exists - both acceptable)
         if (parsedResponse.result !== '00' && parsedResponse.result !== '520') {
@@ -576,20 +552,14 @@ export async function createRecurringSchedule(config, scheduleData) {
         const xmlRequest = buildXMLRequest(requestData);
         const endpoint = getXMLAPIEndpoint(environment);
 
-        console.log('📤 [Schedule] Sending XML request to:', endpoint);
-        console.log('📤 [Schedule] Request XML:', xmlRequest);
-
         const response = await axios.post(endpoint, xmlRequest, {
             headers: {
                 'Content-Type': 'application/xml'
             }
         });
 
-        console.log('📥 [Schedule] Response received');
-
         // Parse response
         const parsedResponse = await parseXMLResponse(response.data);
-        console.log('📥 [Schedule] Parsed response:', JSON.stringify(parsedResponse, null, 2));
 
         // Verify response hash (simplified for schedule responses)
         // Note: Schedule responses may have different hash structure
@@ -641,7 +611,6 @@ export async function processRecurringPaymentSetup(config, data) {
         const scheduleRef = timestamp.substring(timestamp.length - 13); // Shorter ref like docs
 
         // Step 1: Create or update customer
-        console.log('Step 1: Creating customer...');
         const customerResult = await createOrUpdateCustomer(config, {
             payerRef,
             firstName: customerData.first_name,
@@ -658,7 +627,6 @@ export async function processRecurringPaymentSetup(config, data) {
         });
 
         // Step 2: Create card reference
-        console.log('Step 2: Creating card reference...');
         await createCardReference(config, {
             paymentMethodRef,
             payerRef,
@@ -667,7 +635,6 @@ export async function processRecurringPaymentSetup(config, data) {
         });
 
         // Step 3: Process initial payment and store payment method
-        console.log('Step 3: Processing initial payment...');
         const initialPaymentResult = await storePaymentMethodWithInitialPayment(config, {
             paymentMethodRef,
             payerRef,
@@ -678,7 +645,6 @@ export async function processRecurringPaymentSetup(config, data) {
         });
 
         // Step 4: Create recurring schedule
-        console.log('Step 4: Creating recurring schedule...');
         const scheduleResult = await createRecurringSchedule(config, {
             scheduleRef,
             payerRef,

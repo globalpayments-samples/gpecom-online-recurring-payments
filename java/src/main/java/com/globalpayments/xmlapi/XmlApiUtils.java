@@ -159,6 +159,39 @@ public class XmlApiUtils {
     }
 
     /**
+     * Generate hash for Hosted Payment Page (HPP) requests
+     * Hash blueprint: timestamp.merchantid.orderid.amount.currency
+     */
+    public static String generateHPPHash(Map<String, String> params, String sharedSecret) {
+        String dataString = String.format("%s.%s.%s.%s.%s",
+            params.get("timestamp"),
+            params.get("merchantId"),
+            params.get("orderId"),
+            params.get("amount"),
+            params.get("currency")
+        );
+        return generateSha1Hash(dataString, sharedSecret);
+    }
+
+    /**
+     * Generate hash for HPP response verification
+     * Hash blueprint: timestamp.merchantid.orderid.result.message.pasref.authcode
+     */
+    public static String generateHPPResponseHash(Map<String, String> params, String sharedSecret) {
+        String authcode = params.getOrDefault("authcode", "");
+        String dataString = String.format("%s.%s.%s.%s.%s.%s.%s",
+            params.get("timestamp"),
+            params.get("merchantId"),
+            params.get("orderId"),
+            params.get("result"),
+            params.get("message"),
+            params.get("pasref"),
+            authcode
+        );
+        return generateSha1Hash(dataString, sharedSecret);
+    }
+
+    /**
      * Convert dollar amount to cents
      */
     public static int convertToCents(double amount) {

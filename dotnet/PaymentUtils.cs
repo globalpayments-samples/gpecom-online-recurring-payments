@@ -98,14 +98,11 @@ public static class PaymentUtils
         var xmlRequest = request.ToString(SaveOptions.DisableFormatting);
         var endpoint = XmlApiUtils.GetXmlApiEndpoint(environment);
 
-        Console.WriteLine($"📤 [Customer] Sending XML request to: {endpoint}");
-
         var content = new StringContent(xmlRequest, Encoding.UTF8, "application/xml");
         var response = await httpClient.PostAsync(endpoint, content);
         var responseBody = await response.Content.ReadAsStringAsync();
 
         var parsedResponse = XmlApiUtils.ParseXmlResponse(responseBody);
-        Console.WriteLine($"📥 [Customer] Parsed response: {string.Join(", ", parsedResponse.Select(kv => $"{kv.Key}={kv.Value}"))}");
 
         // Check result (00 = success, 501 = payer already exists - both acceptable)
         var result = parsedResponse["result"];
@@ -171,14 +168,11 @@ public static class PaymentUtils
         var xmlRequest = request.ToString(SaveOptions.DisableFormatting);
         var endpoint = XmlApiUtils.GetXmlApiEndpoint(environment);
 
-        Console.WriteLine($"📤 [Card] Sending XML request to: {endpoint}");
-
         var content = new StringContent(xmlRequest, Encoding.UTF8, "application/xml");
         var response = await httpClient.PostAsync(endpoint, content);
         var responseBody = await response.Content.ReadAsStringAsync();
 
         var parsedResponse = XmlApiUtils.ParseXmlResponse(responseBody);
-        Console.WriteLine($"📥 [Card] Parsed response: {string.Join(", ", parsedResponse.Select(kv => $"{kv.Key}={kv.Value}"))}");
 
         // Check result (00 = success, 520 = card already exists - both acceptable)
         var result = parsedResponse["result"];
@@ -261,14 +255,11 @@ public static class PaymentUtils
         var xmlRequest = request.ToString(SaveOptions.DisableFormatting);
         var endpoint = XmlApiUtils.GetXmlApiEndpoint(environment);
 
-        Console.WriteLine($"📤 [Initial Payment] Sending XML request to: {endpoint}");
-
         var content = new StringContent(xmlRequest, Encoding.UTF8, "application/xml");
         var response = await httpClient.PostAsync(endpoint, content);
         var responseBody = await response.Content.ReadAsStringAsync();
 
         var parsedResponse = XmlApiUtils.ParseXmlResponse(responseBody);
-        Console.WriteLine($"📥 [Initial Payment] Parsed response: {string.Join(", ", parsedResponse.Select(kv => $"{kv.Key}={kv.Value}"))}");
 
         // Check if payment was successful
         var result = parsedResponse["result"];
@@ -343,15 +334,11 @@ public static class PaymentUtils
         var xmlRequest = request.ToString(SaveOptions.DisableFormatting);
         var endpoint = XmlApiUtils.GetXmlApiEndpoint(environment);
 
-        Console.WriteLine($"📤 [Schedule] Sending XML request to: {endpoint}");
-        Console.WriteLine($"📤 [Schedule] Request XML: {xmlRequest}");
-
         var content = new StringContent(xmlRequest, Encoding.UTF8, "application/xml");
         var response = await httpClient.PostAsync(endpoint, content);
         var responseBody = await response.Content.ReadAsStringAsync();
 
         var parsedResponse = XmlApiUtils.ParseXmlResponse(responseBody);
-        Console.WriteLine($"📥 [Schedule] Parsed response: {string.Join(", ", parsedResponse.Select(kv => $"{kv.Key}={kv.Value}"))}");
 
         // Check if schedule was created successfully
         var result = parsedResponse["result"];
@@ -401,7 +388,6 @@ public static class PaymentUtils
         var scheduleRef = timestampStr[^13..];
 
         // Step 1: Create or update customer
-        Console.WriteLine("Step 1: Creating customer...");
         var customerParams = new Dictionary<string, object>
         {
             { "payerRef", payerRef },
@@ -423,7 +409,6 @@ public static class PaymentUtils
         var customerResult = await CreateOrUpdateCustomer(config, customerParams);
 
         // Step 2: Create card reference
-        Console.WriteLine("Step 2: Creating card reference...");
         var cardParams = new Dictionary<string, object>
         {
             { "paymentMethodRef", paymentMethodRef },
@@ -435,7 +420,6 @@ public static class PaymentUtils
         var cardResult = await CreateCardReference(config, cardParams);
 
         // Step 3: Process initial payment
-        Console.WriteLine("Step 3: Processing initial payment...");
         var paymentParams = new Dictionary<string, object>
         {
             { "paymentMethodRef", paymentMethodRef },
@@ -449,7 +433,6 @@ public static class PaymentUtils
         var initialPaymentResult = await StorePaymentMethodWithInitialPayment(config, paymentParams);
 
         // Step 4: Create recurring schedule
-        Console.WriteLine("Step 4: Creating recurring schedule...");
         var scheduleParams = new Dictionary<string, object>
         {
             { "scheduleRef", scheduleRef },

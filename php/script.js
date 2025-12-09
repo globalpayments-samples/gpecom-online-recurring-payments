@@ -691,7 +691,7 @@ function initializeHPPPaymentForm() {
             };
 
             // Get HPP request JSON from server
-            const response = await fetch(`${API_BASE}/hpp-request`, {
+            const response = await fetch(`${API_BASE}/hpp-request.php`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -905,7 +905,7 @@ function initializeRecurringForm() {
             console.log('Sending XML API recurring payment request...');
 
             // Send request to XML API endpoint
-            const response = await fetch(`${API_BASE}/recurring-setup`, {
+            const response = await fetch(`${API_BASE}/recurring-setup.php`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

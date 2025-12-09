@@ -96,8 +96,6 @@ public class PaymentUtils {
         String xmlRequest = buildPayerNewXml(timestamp, merchantId, orderId, payer, payerRef, hashVal);
         String endpoint = XmlApiUtils.getXmlApiEndpoint(environment);
 
-        System.out.println("📤 [Customer] Sending XML request to: " + endpoint);
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
                 .header("Content-Type", "application/xml")
@@ -106,8 +104,6 @@ public class PaymentUtils {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         Map<String, Object> parsedResponse = XmlApiUtils.parseXmlResponse(response.body());
-
-        System.out.println("📥 [Customer] Parsed response: " + parsedResponse);
 
         // Check result (00 = success, 501 = payer already exists - both acceptable)
         String result = (String) parsedResponse.get("result");
@@ -159,8 +155,6 @@ public class PaymentUtils {
 
         String endpoint = XmlApiUtils.getXmlApiEndpoint(environment);
 
-        System.out.println("📤 [Card] Sending XML request to: " + endpoint);
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
                 .header("Content-Type", "application/xml")
@@ -169,8 +163,6 @@ public class PaymentUtils {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         Map<String, Object> parsedResponse = XmlApiUtils.parseXmlResponse(response.body());
-
-        System.out.println("📥 [Card] Parsed response: " + parsedResponse);
 
         // Check result (00 = success, 520 = card already exists - both acceptable)
         String result = (String) parsedResponse.get("result");
@@ -224,8 +216,6 @@ public class PaymentUtils {
 
         String endpoint = XmlApiUtils.getXmlApiEndpoint(environment);
 
-        System.out.println("📤 [Initial Payment] Sending XML request to: " + endpoint);
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
                 .header("Content-Type", "application/xml")
@@ -234,8 +224,6 @@ public class PaymentUtils {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         Map<String, Object> parsedResponse = XmlApiUtils.parseXmlResponse(response.body());
-
-        System.out.println("📥 [Initial Payment] Parsed response: " + parsedResponse);
 
         // Check if payment was successful
         String result = (String) parsedResponse.get("result");
@@ -297,9 +285,6 @@ public class PaymentUtils {
 
         String endpoint = XmlApiUtils.getXmlApiEndpoint(environment);
 
-        System.out.println("📤 [Schedule] Sending XML request to: " + endpoint);
-        System.out.println("📤 [Schedule] Request XML: " + xmlRequest);
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
                 .header("Content-Type", "application/xml")
@@ -308,8 +293,6 @@ public class PaymentUtils {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         Map<String, Object> parsedResponse = XmlApiUtils.parseXmlResponse(response.body());
-
-        System.out.println("📥 [Schedule] Parsed response: " + parsedResponse);
 
         // Check if schedule was created successfully
         String result = (String) parsedResponse.get("result");
@@ -357,7 +340,6 @@ public class PaymentUtils {
         String scheduleRef = timestampStr.substring(timestampStr.length() - 13);
 
         // Step 1: Create or update customer
-        System.out.println("Step 1: Creating customer...");
         Map<String, Object> customerParams = new HashMap<>();
         customerParams.put("payerRef", payerRef);
         customerParams.put("firstName", customerData.get("first_name"));
@@ -376,7 +358,6 @@ public class PaymentUtils {
         Map<String, Object> customerResult = createOrUpdateCustomer(config, customerParams);
 
         // Step 2: Create card reference
-        System.out.println("Step 2: Creating card reference...");
         Map<String, Object> cardParams = new HashMap<>();
         cardParams.put("paymentMethodRef", paymentMethodRef);
         cardParams.put("payerRef", payerRef);
@@ -386,7 +367,6 @@ public class PaymentUtils {
         Map<String, Object> cardResult = createCardReference(config, cardParams);
 
         // Step 3: Process initial payment and store payment method
-        System.out.println("Step 3: Processing initial payment...");
         Map<String, Object> paymentParams = new HashMap<>();
         paymentParams.put("paymentMethodRef", paymentMethodRef);
         paymentParams.put("payerRef", payerRef);
@@ -398,7 +378,6 @@ public class PaymentUtils {
         Map<String, Object> initialPaymentResult = storePaymentMethodWithInitialPayment(config, paymentParams);
 
         // Step 4: Create recurring schedule
-        System.out.println("Step 4: Creating recurring schedule...");
         Map<String, Object> scheduleParams = new HashMap<>();
         scheduleParams.put("scheduleRef", scheduleRef);
         scheduleParams.put("payerRef", payerRef);

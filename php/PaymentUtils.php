@@ -89,24 +89,24 @@ class PaymentUtils
         $xmlRequest = $xml->asXML();
         $endpoint = XmlApiUtils::getXmlApiEndpoint($environment);
 
-        echo "📤 [Customer] Sending XML request to: $endpoint\n";
-
         $ch = curl_init($endpoint);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $xmlRequest);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/xml']);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($response === false) {
-            throw new Exception('Failed to send request');
+            throw new Exception('Failed to send request: ' . $curlError);
         }
 
         $parsedResponse = XmlApiUtils::parseXmlResponse($response);
-        echo "📥 [Customer] Parsed response: " . json_encode($parsedResponse) . "\n";
 
         // Check result (00 = success, 501 = payer already exists - both acceptable)
         $result = $parsedResponse['result'];
@@ -168,23 +168,24 @@ class PaymentUtils
         $xmlRequest = $xml->asXML();
         $endpoint = XmlApiUtils::getXmlApiEndpoint($environment);
 
-        echo "📤 [Card] Sending XML request to: $endpoint\n";
-
         $ch = curl_init($endpoint);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $xmlRequest);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/xml']);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
         $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($response === false) {
-            throw new Exception('Failed to send request');
+            throw new Exception('Failed to send request: ' . $curlError);
         }
 
         $parsedResponse = XmlApiUtils::parseXmlResponse($response);
-        echo "📥 [Card] Parsed response: " . json_encode($parsedResponse) . "\n";
 
         // Check result (00 = success, 520 = card already exists - both acceptable)
         $result = $parsedResponse['result'];
@@ -260,23 +261,24 @@ class PaymentUtils
         $xmlRequest = $xml->asXML();
         $endpoint = XmlApiUtils::getXmlApiEndpoint($environment);
 
-        echo "📤 [Initial Payment] Sending XML request to: $endpoint\n";
-
         $ch = curl_init($endpoint);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $xmlRequest);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/xml']);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
         $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($response === false) {
-            throw new Exception('Failed to send request');
+            throw new Exception('Failed to send request: ' . $curlError);
         }
 
         $parsedResponse = XmlApiUtils::parseXmlResponse($response);
-        echo "📥 [Initial Payment] Parsed response: " . json_encode($parsedResponse) . "\n";
 
         // Check if payment was successful
         $result = $parsedResponse['result'];
@@ -346,24 +348,24 @@ class PaymentUtils
         $xmlRequest = $xml->asXML();
         $endpoint = XmlApiUtils::getXmlApiEndpoint($environment);
 
-        echo "📤 [Schedule] Sending XML request to: $endpoint\n";
-        echo "📤 [Schedule] Request XML: $xmlRequest\n";
-
         $ch = curl_init($endpoint);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $xmlRequest);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/xml']);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
         $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($response === false) {
-            throw new Exception('Failed to send request');
+            throw new Exception('Failed to send request: ' . $curlError);
         }
 
         $parsedResponse = XmlApiUtils::parseXmlResponse($response);
-        echo "📥 [Schedule] Parsed response: " . json_encode($parsedResponse) . "\n";
 
         // Check if schedule was created successfully
         $result = $parsedResponse['result'];
@@ -408,7 +410,6 @@ class PaymentUtils
         $scheduleRef = substr($timestampStr, -13);
 
         // Step 1: Create or update customer
-        echo "Step 1: Creating customer...\n";
         $customerResult = self::createOrUpdateCustomer($config, [
             'payerRef' => $payerRef,
             'firstName' => $customerData['first_name'] ?? '',
@@ -425,7 +426,6 @@ class PaymentUtils
         ]);
 
         // Step 2: Create card reference
-        echo "Step 2: Creating card reference...\n";
         $cardResult = self::createCardReference($config, [
             'paymentMethodRef' => $paymentMethodRef,
             'payerRef' => $payerRef,
@@ -434,7 +434,6 @@ class PaymentUtils
         ]);
 
         // Step 3: Process initial payment
-        echo "Step 3: Processing initial payment...\n";
         $initialPaymentResult = self::storePaymentMethodWithInitialPayment($config, [
             'paymentMethodRef' => $paymentMethodRef,
             'payerRef' => $payerRef,
@@ -445,7 +444,6 @@ class PaymentUtils
         ]);
 
         // Step 4: Create recurring schedule
-        echo "Step 4: Creating recurring schedule...\n";
         $scheduleResult = self::createRecurringSchedule($config, [
             'scheduleRef' => $scheduleRef,
             'payerRef' => $payerRef,

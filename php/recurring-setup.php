@@ -19,13 +19,21 @@ declare(strict_types=1);
  * @license   MIT License
  */
 
+// Start output buffering to catch any stray output
+ob_start();
+
 require_once 'vendor/autoload.php';
 require_once 'PaymentUtils.php';
 
 use Dotenv\Dotenv;
 
-ini_set('display_errors', '0');
+// Set headers first to ensure JSON output
 header('Content-Type: application/json');
+ini_set('display_errors', '0');
+error_reporting(0);
+
+// Clean any output that might have occurred
+ob_clean();
 
 try {
     // Load environment variables

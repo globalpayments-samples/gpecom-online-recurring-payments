@@ -132,6 +132,26 @@ public static class XmlApiUtils
     }
 
     /// <summary>
+    /// Generate hash for Hosted Payment Page (HPP) requests
+    /// Hash blueprint: timestamp.merchantid.orderid.amount.currency
+    /// </summary>
+    public static string GenerateHPPHash(string timestamp, string merchantId, string orderId, int amount, string currency, string sharedSecret)
+    {
+        var dataString = $"{timestamp}.{merchantId}.{orderId}.{amount}.{currency}";
+        return GenerateSha1Hash(dataString, sharedSecret);
+    }
+
+    /// <summary>
+    /// Generate hash for HPP response verification
+    /// Hash blueprint: timestamp.merchantid.orderid.result.message.pasref.authcode
+    /// </summary>
+    public static string GenerateHPPResponseHash(string timestamp, string merchantId, string orderId, string result, string message, string pasref, string authcode, string sharedSecret)
+    {
+        var dataString = $"{timestamp}.{merchantId}.{orderId}.{result}.{message}.{pasref}.{authcode}";
+        return GenerateSha1Hash(dataString, sharedSecret);
+    }
+
+    /// <summary>
     /// Convert dollar amount to cents
     /// </summary>
     public static int ConvertToCents(decimal amount)

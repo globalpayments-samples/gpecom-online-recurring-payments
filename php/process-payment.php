@@ -5,9 +5,9 @@ declare(strict_types=1);
 /**
  * Card Payment Processing Script
  *
- * This script demonstrates card payment processing using the Global Payments SDK.
- * It handles tokenized card data and billing information to process payments
- * securely through the Global Payments API.
+ * This script demonstrates card payment processing using the Global Payments XML API.
+ * It handles card data and billing information to process payments
+ * securely through the Global Payments XML API endpoint.
  *
  * PHP version 7.4 or higher
  *
@@ -18,118 +18,184 @@ declare(strict_types=1);
  * @link      https://github.com/globalpayments
  */
 
+// Start output buffering to catch any stray output
+ob_start();
+
 require_once 'vendor/autoload.php';
+require_once 'PaymentUtils.php';
 
 use Dotenv\Dotenv;
-use GlobalPayments\Api\Entities\Address;
-use GlobalPayments\Api\Entities\Exceptions\ApiException;
-use GlobalPayments\Api\PaymentMethods\CreditCardData;
-use GlobalPayments\Api\ServiceConfigs\Gateways\PorticoConfig;
-use GlobalPayments\Api\ServicesContainer;
 
+// Set headers first
+header('Content-Type: application/json');
 ini_set('display_errors', '0');
+error_reporting(0);
+
+// Clean any output that might have occurred
+ob_clean();
 
 /**
- * Configure the SDK
+ * Get XML API configuration from environment variables
  *
- * Sets up the Global Payments SDK with necessary credentials and settings
- * loaded from environment variables.
- *
- * @return void
+ * @return array Configuration array
  */
-function configureSdk(): void
+function getXMLAPIConfig(): array
 {
     $dotenv = Dotenv::createImmutable(__DIR__);
     $dotenv->load();
 
-    $config = new PorticoConfig();
-    $config->secretApiKey = $_ENV['SECRET_API_KEY'];
-    $config->developerId = '000000';
-    $config->versionNumber = '0000';
-    $config->serviceUrl = 'https://cert.api2.heartlandportico.com';
-    
-    ServicesContainer::configureService($config);
+    return [
+        'merchantId' => $_ENV['MERCHANT_ID'] ?? '',
+        'sharedSecret' => $_ENV['SHARED_SECRET'] ?? '',
+        'account' => $_ENV['ACCOUNT'] ?? 'internet',
+        'environment' => $_ENV['ENVIRONMENT'] ?? 'sandbox'
+    ];
 }
 
 /**
- * Sanitize postal code by removing invalid characters
+ * Validate required environment variables
  *
- * @param string|null $postalCode The postal code to sanitize
- *
- * @return string Sanitized postal code containing only alphanumeric
- *                characters and hyphens, limited to 10 characters
+ * @param array $config Configuration array
+ * @throws Exception if required variables are missing
  */
-function sanitizePostalCode(?string $postalCode): string
+function validateConfig(array $config): void
 {
-    if ($postalCode === null) {
-        return '';
+    $missing = [];
+
+    if (empty($config['merchantId'])) {
+        $missing[] = 'MERCHANT_ID';
     }
-    
-    $sanitized = preg_replace('/[^a-zA-Z0-9-]/', '', $postalCode);
-    return substr($sanitized, 0, 10);
+    if (empty($config['sharedSecret'])) {
+        $missing[] = 'SHARED_SECRET';
+    }
+
+    if (!empty($missing)) {
+        throw new Exception('Missing required environment variables: ' . implode(', ', $missing));
+    }
 }
 
-// Initialize SDK configuration
-configureSdk();
-
 try {
-    // Validate required fields
-    if (!isset($_POST['payment_token'], $_POST['billing_zip'], $_POST['amount'])) {
-        throw new ApiException('Missing required fields');
-    }
-    
-    // Parse and validate amount
-    $amount = floatval($_POST['amount']);
-    if ($amount <= 0) {
-        throw new ApiException('Invalid amount');
-    }
-
-    // Initialize payment data using tokenized card information
-    $card = new CreditCardData();
-    $card->token = $_POST['payment_token'];
-
-    // Create billing address for AVS verification
-    $address = new Address();
-    $address->postalCode = sanitizePostalCode($_POST['billing_zip']);
-
-    // Process the payment transaction with specified amount
-    $response = $card->charge($amount)
-        ->withAllowDuplicates(true)
-        ->withCurrency('USD')
-        ->withAddress($address)
-        ->execute();
-    
-    // Verify transaction was successful
-    if ($response->responseCode !== '00') {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Payment processing failed',
-            'error' => [
-                'code' => 'PAYMENT_DECLINED',
-                'details' => $response->responseMessage
-            ]
-        ]);
-        exit;
-    }
-
-    // Return success response with transaction ID
-    echo json_encode([
-        'success' => true,
-        'message' => 'Payment successful! Transaction ID: ' . $response->transactionId,
-        'data' => [
-            'transactionId' => $response->transactionId
-        ]
-    ]);
-} catch (ApiException $e) {
-    // Handle payment processing errors
-    http_response_code(400);
+    // Get and validate configuration
+    $config = getXMLAPIConfig();
+    validateConfig($config);
+} catch (Exception $e) {
+    http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Payment processing failed',
+        'message' => 'Configuration error: ' . $e->getMessage(),
         'error' => [
-            'code' => 'API_ERROR',
+            'code' => 'CONFIG_ERROR',
             'details' => $e->getMessage()
+        ]
+    ]);
+    exit;
+}
+
+try {
+    // Extract request parameters
+    $paymentToken = $_POST['payment_token'] ?? null;
+    $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
+    $currency = $_POST['currency'] ?? 'USD';
+    
+    // Customer data
+    $firstName = $_POST['first_name'] ?? '';
+    $lastName = $_POST['last_name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $phone = $_POST['phone'] ?? '';
+    
+    // Billing data
+    $billingZip = $_POST['billing_zip'] ?? '';
+    $streetAddress = $_POST['street_address'] ?? '';
+    $city = $_POST['city'] ?? '';
+    $state = $_POST['state'] ?? '';
+    $country = $_POST['country'] ?? 'US';
+
+    // Validate required fields
+    if (empty($paymentToken)) {
+        throw new Exception('Payment token is required');
+    }
+
+    if ($amount <= 0) {
+        throw new Exception('Valid amount is required');
+    }
+
+    // Prepare billing data
+    $billingData = [
+        'billing_zip' => $billingZip,
+        'street_address' => $streetAddress,
+        'city' => $city,
+        'state' => $state,
+        'country' => $country
+    ];
+
+    // Prepare customer data
+    $customerData = [
+        'first_name' => $firstName,
+        'last_name' => $lastName,
+        'email' => $email,
+        'phone' => $phone,
+        'billing_zip' => $billingZip,
+        'city' => $city,
+        'state' => $state,
+        'country' => $country,
+        'street_address' => $streetAddress
+    ];
+
+    // Parse payment token - it should contain card data as JSON
+    $cardData = json_decode($paymentToken, true);
+    if ($cardData === null) {
+        // If not JSON, treat as simple token/card number
+        $cardData = [
+            'number' => $paymentToken,
+            'expmonth' => '12',
+            'expyear' => '25',
+            'cvn' => '123',
+            'chname' => trim("$firstName $lastName") ?: 'Card Holder'
+        ];
+    }
+
+    // Process one-time payment
+    $result = PaymentUtils::processOneTimePayment($config, [
+        'token' => $cardData,
+        'amount' => $amount,
+        'currency' => $currency,
+        'billingData' => $billingData,
+        'customerData' => $customerData
+    ]);
+
+    // Return success response
+    echo json_encode([
+        'success' => true,
+        'message' => 'Payment processed successfully',
+        'data' => $result
+    ]);
+
+} catch (Exception $e) {
+    // Handle payment processing errors
+    $errorCode = 'PAYMENT_ERROR';
+    $statusCode = 500;
+
+    $errorMessage = $e->getMessage();
+
+    // Determine appropriate error code based on error message
+    if (stripos($errorMessage, 'authentication') !== false || stripos($errorMessage, 'hash') !== false) {
+        $errorCode = 'AUTH_ERROR';
+        $statusCode = 401;
+    } elseif (stripos($errorMessage, 'declined') !== false || stripos($errorMessage, 'insufficient') !== false) {
+        $errorCode = 'DECLINED';
+        $statusCode = 402;
+    } elseif (stripos($errorMessage, 'invalid') !== false) {
+        $errorCode = 'INVALID_REQUEST';
+        $statusCode = 400;
+    }
+
+    http_response_code($statusCode);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Payment processing failed: ' . $errorMessage,
+        'error' => [
+            'code' => $errorCode,
+            'details' => $errorMessage
         ]
     ]);
 }
