@@ -1,6 +1,6 @@
-# Java XML API - Recurring Payments Implementation
+# Java Implementation
 
-This Java application demonstrates recurring payment processing using the **Global Payments XML API** with the Payment Scheduler service.
+This Java application demonstrates recurring payment processing using the Global Payments XML API with the Payment Scheduler service.
 
 ## Features
 
@@ -14,11 +14,8 @@ This Java application demonstrates recurring payment processing using the **Glob
 ## Requirements
 
 - Java 11 or later
-- Maven 3.6+
-- Global Payments XML API credentials:
-  - Merchant ID
-  - Shared Secret
-  - Account name (default: 'internet')
+- Maven 3.6 or later
+- Global Payments XML API credentials (Merchant ID, Shared Secret, Account name)
 
 ## Project Structure
 

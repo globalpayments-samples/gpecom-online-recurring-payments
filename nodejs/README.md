@@ -1,17 +1,17 @@
-# Global Payments XML API - Recurring Payments Implementation
+# Node.js Implementation
 
-This Node.js application demonstrates recurring payment processing using the **Global Payments XML API** with the Payment Scheduler service.
+This Node.js application demonstrates recurring payment processing using the Global Payments XML API with the Payment Scheduler service.
 
 ## Features
 
-- ✅ **One-time payment processing** using XML API
-- ✅ **Recurring/subscription payments** with Payment Scheduler
-- ✅ **Client-side card tokenization** (simplified for demo)
-- ✅ **Customer and payment method storage** using Card Storage API
-- ✅ **StoredCredential implementation** for recurring transactions
-- ✅ **Multiple billing frequencies**: Weekly, Bi-Weekly, Monthly, Quarterly, Yearly
-- ✅ **Initial payment validation** before schedule creation
-- ✅ **Complete customer data collection** (name, email, phone, address)
+- One-time payment processing using XML API
+- Recurring/subscription payments with Payment Scheduler
+- Client-side card tokenization (simplified for demo)
+- Customer and payment method storage using Card Storage API
+- StoredCredential implementation for recurring transactions
+- Multiple billing frequencies: Weekly, Bi-Weekly, Monthly, Quarterly, Yearly
+- Initial payment validation before schedule creation
+- Complete customer data collection (name, email, phone, address)
 
 ## Architecture Overview
 
@@ -28,12 +28,9 @@ This implementation follows the XML API workflow:
 
 ## Requirements
 
-- **Node.js** 14.x or later
-- **npm** (Node Package Manager)
-- **Global Payments XML API credentials**:
-  - Merchant ID
-  - Shared Secret
-  - Account name (default: 'internet')
+- Node.js 14.x or later
+- npm
+- Global Payments XML API credentials (Merchant ID, Shared Secret, Account name)
 
 ## Project Structure
 

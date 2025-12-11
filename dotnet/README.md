@@ -1,6 +1,6 @@
-# .NET XML API - Recurring Payments Implementation
+# .NET Implementation
 
-This .NET application demonstrates recurring payment processing using the **Global Payments XML API** with the Payment Scheduler service.
+This .NET application demonstrates recurring payment processing using the Global Payments XML API with the Payment Scheduler service.
 
 ## Features
 
@@ -14,10 +14,7 @@ This .NET application demonstrates recurring payment processing using the **Glob
 ## Requirements
 
 - .NET 6.0 or later
-- Global Payments XML API credentials:
-  - Merchant ID
-  - Shared Secret
-  - Account name (default: 'internet')
+- Global Payments XML API credentials (Merchant ID, Shared Secret, Account name)
 
 ## Project Structure
 

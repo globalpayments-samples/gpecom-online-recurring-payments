@@ -1,6 +1,6 @@
-# PHP XML API - Recurring Payments Implementation
+# PHP Implementation
 
-This PHP application demonstrates recurring payment processing using the **Global Payments XML API** with the Payment Scheduler service.
+This PHP application demonstrates recurring payment processing using the Global Payments XML API with the Payment Scheduler service.
 
 ## Features
 
@@ -15,10 +15,7 @@ This PHP application demonstrates recurring payment processing using the **Globa
 
 - PHP 7.4 or later
 - Composer
-- Global Payments XML API credentials:
-  - Merchant ID
-  - Shared Secret
-  - Account name (default: 'internet')
+- Global Payments XML API credentials (Merchant ID, Shared Secret, Account name)
 
 ## Project Structure
 
