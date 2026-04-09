@@ -1,4 +1,4 @@
-# Node.js Implementation
+# GP Ecom Online Recurring Payments — Node.js
 
 This Node.js application demonstrates recurring payment processing using the Global Payments XML API with the Payment Scheduler service.
 

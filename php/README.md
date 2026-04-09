@@ -1,238 +1,264 @@
-# PHP Implementation
+# GP Ecom Online Recurring Payments — PHP
 
-This PHP application demonstrates recurring payment processing using the Global Payments XML API with the Payment Scheduler service.
+PHP implementation of recurring payment processing using the Global Payments XML API (GP Ecom) with Card Storage and Payment Scheduler services.
 
-## Features
+Part of the [gpecom-online-recurring-payments](../) multi-language project.
 
-- One-time payment processing using Global Payments SDK
-- Recurring/subscription payments with XML API
-- Customer and payment method storage using Card Storage API
-- StoredCredential implementation for recurring transactions
-- Multiple billing frequencies: Weekly, Bi-Weekly, Monthly, Quarterly, Yearly
-- Initial payment validation before schedule creation
+---
 
 ## Requirements
 
-- PHP 7.4 or later
+- PHP 8.0+
 - Composer
-- Global Payments XML API credentials (Merchant ID, Shared Secret, Account name)
+- Global Payments GP Ecom credentials (`MERCHANT_ID`, `SHARED_SECRET`, `ACCOUNT`)
+
+---
 
 ## Project Structure
 
 ```
 php/
-├── XmlApiUtils.php             # XML API utilities
-├── PaymentUtils.php            # Payment processing workflow
-├── process-payment.php         # One-time payment endpoint
-├── recurring-setup.php         # Recurring payment endpoint
-├── index.html                  # Frontend payment form
-├── script.js                   # Client-side JavaScript
-├── composer.json               # Composer dependencies
-├── .env.sample                 # Environment variable template
-├── run.sh                      # Shell script to run the app
-└── README.md                   # This file
+├── .env.sample              # Environment variable template
+├── composer.json            # Dependencies (globalpayments/php-sdk)
+├── Dockerfile
+├── run.sh                   # Install + start shortcut
+├── PaymentUtils.php         # GpEcomConfig setup + shared helpers
+├── XmlApiUtils.php          # HMAC SHA-1 signature + XML request helpers
+├── config.php               # GET /config endpoint
+├── process-payment.php      # POST /process-payment — one-time charge
+├── recurring-setup.php      # POST /recurring-setup — 4-step recurring flow
+├── hpp-request.php          # GET /hpp-request — HPP signed request
+├── hpp-response.php         # POST /hpp-response — HPP callback validation
+├── script.js                # Frontend JS helpers
+└── index.html               # Shared frontend (symlinked from root)
 ```
 
-## Setup Instructions
+---
 
-### 1. Install Dependencies
-
-```bash
-cd php
-composer install
-```
-
-Dependencies:
-- GlobalPayments PHP SDK 14.2.20
-- vlucas/phpdotenv 5.6
-- GuzzleHTTP 7.8
-
-### 2. Configure Environment Variables
-
-Copy `.env.sample` to `.env`:
+## Setup
 
 ```bash
 cp .env.sample .env
 ```
 
-Edit `.env` with your credentials:
+Edit `.env`:
 
 ```env
-# XML API Credentials
 MERCHANT_ID=your_merchant_id
 SHARED_SECRET=your_shared_secret
 ACCOUNT=internet
-
-# Environment
 ENVIRONMENT=sandbox
-
-# Server Port
-PORT=8000
 ```
 
-### 3. Run the Application
+Install dependencies:
 
 ```bash
+composer install
+```
+
+Start the server:
+
+```bash
+php -S localhost:8003
+# or
 ./run.sh
 ```
 
-Or manually:
+Open: http://localhost:8003
 
-```bash
-php -S 0.0.0.0:8000
+---
+
+## Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MERCHANT_ID` | Your GP Ecom Merchant ID | `radoslav` |
+| `SHARED_SECRET` | HMAC signing secret | `cfJeww9HL2` |
+| `ACCOUNT` | Account descriptor | `internet` |
+| `ENVIRONMENT` | `sandbox` or `production` | `sandbox` |
+
+Credentials available from your Global Payments account manager or the [GP Developer Portal](https://developer.globalpay.com).
+
+---
+
+## SDK Configuration
+
+`PaymentUtils.php` configures `GpEcomConfig` from environment variables:
+
+```php
+$config = new GpEcomConfig();
+$config->merchantId = $_ENV['MERCHANT_ID'];
+$config->accountId  = $_ENV['ACCOUNT'];
+$config->sharedSecret = $_ENV['SHARED_SECRET'];
+$config->environment = Environment::TEST; // or PRODUCTION
+
+ServicesContainer::configureService($config);
 ```
 
-The server will start at `http://localhost:8000`
+All XML API requests use HMAC SHA-1 authentication — see `XmlApiUtils.php` for signature generation.
 
-## API Endpoints
+---
 
-### `POST /process-payment.php`
-Process one-time payment (tokenized)
+## Endpoints
 
-**Request Parameters:**
-- `payment_token` (required) - Payment token from client
-- `billing_zip` (required) - Billing postal code
-- `amount` (required) - Payment amount
+### `GET /config` → `config.php`
 
-### `POST /recurring-setup.php`
-Set up recurring payment with direct card details
+Returns Merchant ID and environment for frontend initialization.
 
-**Request Body (JSON):**
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "merchantId": "your_merchant_id",
+    "environment": "sandbox"
+  }
+}
+```
+
+---
+
+### `POST /process-payment` → `process-payment.php`
+
+One-time card charge via the XML API.
+
+**Request body:**
 ```json
 {
   "card_number": "4263970000005262",
-  "card_expiry": "12/25",
+  "card_expiry": "1225",
   "card_cvv": "123",
-  "card_name": "John Doe",
-  "amount": 29.99,
+  "amount": 25.00,
+  "currency": "USD"
+}
+```
+
+**Success response:**
+```json
+{
+  "success": true,
+  "data": {
+    "transactionId": "ABC123",
+    "authCode": "12345",
+    "amount": 25.00,
+    "currency": "USD",
+    "status": "00",
+    "message": "[ test system ] Authorised"
+  }
+}
+```
+
+---
+
+### `POST /recurring-setup` → `recurring-setup.php`
+
+4-step recurring setup: creates customer, stores card, processes initial charge, schedules future billing.
+
+**Request body:**
+```json
+{
+  "card_number": "4263970000005262",
+  "card_expiry": "1225",
+  "card_cvv": "123",
+  "card_name": "Jane Smith",
+  "amount": 25.00,
   "currency": "USD",
-  "frequency": "monthly",
-  "start_date": "2024-12-01",
-  "first_name": "John",
-  "last_name": "Doe",
-  "email": "john.doe@example.com",
-  "phone": "555-123-4567",
-  "billing_zip": "47130",
+  "frequency": "Monthly",
+  "start_date": "2025-02-01",
+  "first_name": "Jane",
+  "last_name": "Smith",
+  "email": "jane.smith@example.com",
+  "phone": "555-0100",
+  "billing_zip": "30301",
   "billing_country": "840"
 }
 ```
 
-**Response (Success):**
+**Success response:**
 ```json
 {
   "success": true,
-  "message": "Recurring payment setup completed successfully",
   "data": {
     "customer": {
-      "payerRef": "CUS_xxx",
-      "name": "John Doe",
-      "email": "john.doe@example.com"
+      "payerRef": "CUS_jane_smith_uuid",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com"
     },
     "payment": {
-      "transactionId": "xxx",
-      "orderId": "INIT_xxx",
+      "transactionId": "TRN_abc123",
+      "orderId": "INIT_abc123",
       "authCode": "12345",
-      "amount": 29.99,
+      "amount": 25.00,
       "currency": "USD"
     },
     "schedule": {
-      "scheduleRef": "SCH_xxx",
-      "scheduleText": "Monthly on the 21st",
-      "frequency": "monthly",
-      "startDate": "2024-12-01",
-      "amount": 29.99,
+      "scheduleRef": "SCH_monthly_uuid",
+      "frequency": "Monthly",
+      "startDate": "2025-02-01",
+      "amount": 25.00,
       "currency": "USD"
     }
   }
 }
 ```
 
-## XML API Integration
+Supported `frequency` values: `Weekly`, `Bi-Weekly`, `Monthly`, `Quarterly`, `Annually`
 
-### 4-Step Workflow
+---
 
-1. **Customer Creation** (`payer-new`)
-   - Creates customer in Card Storage API
-   - Stores name, email, phone, address
+## 4-Step Recurring Workflow
 
-2. **Card Storage** (`card-new`)
-   - Creates tokenized card reference
-   - Links card to customer
+| Step | XML Request | Description |
+|------|-------------|-------------|
+| 1 | `payer-new` | Create customer in Card Storage |
+| 2 | `card-new` | Store card reference under customer |
+| 3 | `receipt-in` | Process initial charge (sequence: first) |
+| 4 | `schedule-new` | Create recurring billing schedule |
 
-3. **Initial Payment** (`receipt-in`)
-   - Processes first payment
-   - Marks as recurring (sequence: first)
+Future charges reference `payerRef` + `cardRef` — no card data needed.
 
-4. **Schedule Creation** (`schedule-new`)
-   - Creates recurring schedule
-   - Sets frequency and amount
+---
 
-### Authentication
+## Test Cards
 
-All XML API requests use SHA-1 hash-based authentication:
+Use these in sandbox (`ENVIRONMENT=sandbox`). Expiry: any future date in `MMYY` format.
 
-1. Concatenate request fields per API specification
-2. Generate SHA-1 hash
-3. Append shared secret and hash again
-4. Include final hash in request
+| Brand | Card Number | CVV | Expected Result |
+|-------|-------------|-----|-----------------|
+| Visa | 4263 9700 0000 5262 | 123 | Approved |
+| Mastercard | 5425 2300 0000 4415 | 123 | Approved |
+| Amex | 3741 0100 0000 608 | 1234 | Approved |
+| Declined | 4000 1200 0000 1154 | 123 | Declined |
 
-See `XmlApiUtils.php` for implementation details.
+---
 
-## Testing
+## Running with Docker
 
-### Test Cards (Sandbox)
+```bash
+# From project root
+docker-compose up php
+```
 
-| Card Number | Type | CVV | Expiry |
-|-------------|------|-----|--------|
-| 4263970000005262 | Visa | 123 | 12/25 |
-| 5425230000004415 | Mastercard | 123 | 12/25 |
-| 374101000000608 | Amex | 1234 | 12/25 |
+Runs on http://localhost:8003 (mapped from container port 8000).
 
-### Testing Recurring Payments
-
-1. Navigate to the Recurring Payments tab
-2. Fill in customer information
-3. Enter test card details
-4. Set subscription amount and frequency
-5. Click "Set Up Recurring Payment"
-
-Expected result: All 4 XML API calls succeed, schedule is created.
-
-## Security Considerations
-
-Before deploying to production:
-
-- Update `ENVIRONMENT=production` in `.env`
-- Use production XML API credentials
-- Implement proper client-side tokenization
-- Add input validation and sanitization
-- Set up HTTPS/TLS
-- Review PCI DSS compliance requirements
-- Configure proper PHP security directives
-- Implement CSRF protection
-
-**Never** store raw card data on your servers.
+---
 
 ## Troubleshooting
 
-**Error: "Authentication failed"**
-- Verify Merchant ID and Shared Secret
-- Check environment (sandbox vs production)
+**`508` — Bad signature**
+Verify `SHARED_SECRET` in `.env` exactly matches the GP Ecom merchant portal. Leading/trailing whitespace is a common cause.
 
-**Error: "Schedule creation failed"**
-- Ensure start date is in the future
-- Verify customer and card were created successfully
+**`504` — Order ID already exists**
+The SDK auto-generates unique order IDs. If this happens, ensure you're not replaying the same request payload.
 
-**Composer Errors**
-- Ensure PHP 7.4+ is installed
-- Run `composer install` to refresh dependencies
+**`501 Not Enrolled` on recurring setup**
+Card Storage must be enabled on your Merchant ID. Contact your account manager for new sandbox accounts.
 
-## Additional Resources
+**`Class not found` error**
+Run `composer install` — vendor autoloader not generated yet.
 
-- [Global Payments Developer Portal](https://developer.globalpay.com)
-- [XML API Documentation](https://developer.globalpay.com/ecommerce/api)
-- [Payment Scheduler Guide](https://developer.globalpay.com/ecommerce/api/payment-scheduler)
+**PHP version mismatch**
+Requires PHP 8.0+. Check with `php -v`. Use the Docker container if local PHP is older.
 
-## License
-
-This project is provided as-is for demonstration purposes.
+**Port 8003 already in use**
+Check with `lsof -i :8003` and stop the conflicting process, or change the port in `run.sh`.
