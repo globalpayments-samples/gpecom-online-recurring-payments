@@ -71,7 +71,7 @@ Open: http://localhost:8004
 | `ACCOUNT` | Account descriptor | `internet` |
 | `ENVIRONMENT` | `sandbox` or `production` | `sandbox` |
 
-Credentials available from your Global Payments account manager or the [GP Developer Portal](https://developer.globalpay.com).
+Credentials available from your Global Payments account manager or the [GP Developer Portal](https://developer.globalpayments.com).
 
 ---
 
