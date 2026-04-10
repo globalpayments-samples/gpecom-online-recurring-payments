@@ -402,16 +402,16 @@ This implementation was migrated from the GP-API (REST) reference. Key differenc
 
 ## Additional Resources
 
-- [Payment Scheduler Documentation](https://developer.globalpay.com/ecommerce/api/payment-scheduler)
-- [Installment Service Documentation](https://developer.globalpay.com/ecommerce/api/installment-service)
-- [Card Storage API](https://developer.globalpay.com/ecommerce/api/card-storage)
-- [XML API Authentication](https://developer.globalpay.com/ecommerce/api/authentication)
+- [Payment Scheduler Documentation](https://developer.globalpayments.com/api/references-overview)
+- [Installment Service Documentation](https://developer.globalpayments.com/api/references-overview)
+- [Card Storage API](https://developer.globalpayments.com/api/references-overview)
+- [XML API Authentication](https://developer.globalpayments.com/api/references-overview)
 
 ## Support
 
 For technical support with Global Payments XML API:
 - Email: [developer support email]
-- Documentation: https://developer.globalpay.com
+- Documentation: https://developer.globalpayments.com
 - Sandbox Testing: Use your test credentials from the developer portal
 
 ## License

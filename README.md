@@ -71,7 +71,7 @@ Each future recurring charge references `payerRef` + `cardRef` — no card data 
 
 ## Prerequisites
 
-- Global Payments GP Ecom account — contact [Global Payments](https://developer.globalpay.com) for XML API credentials
+- Global Payments GP Ecom account — contact [Global Payments](https://developer.globalpayments.com) for XML API credentials
 - GP Ecom credentials: `Merchant ID`, `Shared Secret`, and `Account` (usually `internet`)
 - A local runtime for your chosen language:
   - PHP 8.0+ with Composer
@@ -291,7 +291,7 @@ Use these in sandbox (`ENVIRONMENT=sandbox`). Expiry: any future date in `MMYY` 
 |-------|-------------|-----|-----------------|
 | Visa | 4263 9700 0000 5262 | 123 | Approved |
 | Visa | 4000 0000 0000 0002 | 123 | Approved |
-| Mastercard | 5425 2334 2424 1200 | 123 | Approved |
+| Mastercard | 5425 2300 0000 4415 | 123 | Approved |
 | Amex | 3714 4963 5398 431 | 1234 | Approved |
 | Declined | 4000 1200 0000 1154 | 123 | Declined |
 
@@ -354,7 +354,7 @@ gpecom-online-recurring-payments/
 | `ACCOUNT` | Account descriptor (usually `internet`) | `internet` |
 | `ENVIRONMENT` | `sandbox` for testing, `production` for live | `sandbox` |
 
-Credentials are available from your Global Payments account manager or the [GP Developer Portal](https://developer.globalpay.com).
+Credentials are available from your Global Payments account manager or the [GP Developer Portal](https://developer.globalpayments.com).
 
 **Sandbox API endpoint:** `https://api.sandbox.realexpayments.com/epage-remote.cgi`
 **Production API endpoint:** `https://api.realexpayments.com/epage-remote.cgi`
