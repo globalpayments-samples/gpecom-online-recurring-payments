@@ -8,12 +8,12 @@ Available in four languages: PHP, Node.js, .NET, and Java.
 
 ## Available Implementations
 
-| Language | Framework | SDK Version | Port |
+| Language | Framework | Integration | Port |
 |----------|-----------|-------------|------|
-| [**PHP**](./php/) | Built-in Server | globalpayments/php-sdk ^13.1 | 8003 |
-| [**Node.js**](./nodejs/) | Express.js | globalpayments-api ^3.10.6 | 8001 |
-| [**.NET**](./dotnet/) | ASP.NET Core | GlobalPayments.Api 9.0.16 | 8006 |
-| [**Java**](./java/) | Jakarta Servlet | globalpayments-sdk 14.2.20 | 8004 |
+| [**PHP**](./php/) | Built-in Server | Direct XML API (cURL) | 8003 |
+| [**Node.js**](./nodejs/) | Express.js | Direct XML API (axios) | 8001 |
+| [**.NET**](./dotnet/) | ASP.NET Core | Direct XML API (HttpClient) | 8006 |
+| [**Java**](./java/) | Jakarta Servlet | Direct XML API (HttpClient) | 8004 |
 
 Preview links (runs in browser via CodeSandbox):
 - [PHP Preview](https://githubbox.com/globalpayments-samples/gpecom-online-recurring-payments/tree/main/php)
