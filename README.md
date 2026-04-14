@@ -8,12 +8,12 @@ Available in four languages: PHP, Node.js, .NET, and Java.
 
 ## Available Implementations
 
-| Language | Framework | Integration | Port |
-|----------|-----------|-------------|------|
-| [**PHP**](./php/) | Built-in Server | Direct XML API (cURL) | 8003 |
-| [**Node.js**](./nodejs/) | Express.js | Direct XML API (axios) | 8001 |
-| [**.NET**](./dotnet/) | ASP.NET Core | Direct XML API (HttpClient) | 8006 |
-| [**Java**](./java/) | Jakarta Servlet | Direct XML API (HttpClient) | 8004 |
+| Language | Framework | Integration |
+|----------|-----------|-------------|
+| [**PHP**](./php/) | Built-in Server | Direct XML API (cURL) |
+| [**Node.js**](./nodejs/) | Express.js | Direct XML API (axios) |
+| [**.NET**](./dotnet/) | ASP.NET Core | Direct XML API (HttpClient) |
+| [**Java**](./java/) | Jakarta Servlet | Direct XML API (HttpClient) |
 
 Preview links (runs in browser via CodeSandbox):
 - [PHP Preview](https://githubbox.com/globalpayments-samples/gpecom-online-recurring-payments/tree/main/php)
@@ -380,6 +380,16 @@ The `.env` file is missing or not loaded. Confirm the file exists in the languag
 
 **Port already in use**
 Check with `lsof -i :8003` (or the relevant port) and stop the conflicting process, or update the port mapping in `docker-compose.yml`.
+
+## Community
+
+- 🌐 **Developer Portal** — [developer.globalpayments.com](https://developer.globalpayments.com)
+- 💬 **Discord** — [Join the community](https://discord.gg/myER9G9qkc)
+- 📋 **GitHub Discussions** — [github.com/globalpayments-samples](https://github.com/globalpayments-samples)
+- 📧 **Newsletter** — [Subscribe](https://www.globalpayments.com/en-gb/modals/newsletter)
+- 💼 **LinkedIn** — [Global Payments for Developers](https://www.linkedin.com/showcase/global-payments-for-developers/posts/?feedView=all)
+
+Have a question or found a bug? [Open an issue](https://github.com/globalpayments-samples/gpecom-online-recurring-payments/issues) or reach out at [communityexperience@globalpay.com](mailto:communityexperience@globalpay.com).
 
 ---
 
