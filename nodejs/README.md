@@ -2,6 +2,8 @@
 
 This Node.js application demonstrates recurring payment processing using the Global Payments XML API with the Payment Scheduler service.
 
+---
+
 ## Features
 
 - One-time payment processing using XML API
@@ -12,6 +14,8 @@ This Node.js application demonstrates recurring payment processing using the Glo
 - Multiple billing frequencies: Weekly, Bi-Weekly, Monthly, Quarterly, Yearly
 - Initial payment validation before schedule creation
 - Complete customer data collection (name, email, phone, address)
+
+---
 
 ## Architecture Overview
 
@@ -26,11 +30,15 @@ This implementation follows the XML API workflow:
    - Create recurring schedule in Payment Scheduler
 4. **Future Charges**: Automated billing per schedule using stored payment method
 
+---
+
 ## Requirements
 
 - Node.js 14.x or later
 - npm
 - Global Payments XML API credentials (Merchant ID, Shared Secret, Account name)
+
+---
 
 ## Project Structure
 
@@ -46,6 +54,8 @@ nodejs/
 ├── .env                   # Your credentials (create from .env.sample)
 └── README.md              # This file
 ```
+
+---
 
 ## Setup Instructions
 
@@ -116,6 +126,8 @@ You'll see four tabs:
 2. **Tokenization** - Token generation demo
 3. **Webhooks** - Webhook information
 4. **Recurring Payments** - Recurring payment setup
+
+---
 
 ## API Endpoints
 
@@ -219,6 +231,8 @@ Set up recurring payment with direct card details
 }
 ```
 
+---
+
 ## XML API Integration Details
 
 ### Authentication
@@ -279,6 +293,8 @@ Supported billing frequencies:
 
 See [xmlApiUtils.js:226-243](xmlApiUtils.js#L226-L243) for frequency mapping.
 
+---
+
 ## Testing
 
 ### Test Cards (Sandbox)
@@ -320,6 +336,8 @@ After successful setup, you'll receive:
 
 **Note:** In the XML API sandbox, scheduled payments may not execute automatically. For production, Global Payments will process scheduled transactions and send daily reports.
 
+---
+
 ## Security Considerations
 
 ### Production Checklist
@@ -350,6 +368,8 @@ Before deploying to production:
 3. **Obtain PCI SAQ-D certification** if handling raw card data
 
 **Never** store raw card numbers, CVV, or full track data on your servers.
+
+---
 
 ## Troubleshooting
 
@@ -387,6 +407,8 @@ View XML requests/responses:
 console.log('XML Request:', xmlRequest);
 ```
 
+---
+
 ## Migration from GP-API to XML API
 
 This implementation was migrated from the GP-API (REST) reference. Key differences:
@@ -400,6 +422,8 @@ This implementation was migrated from the GP-API (REST) reference. Key differenc
 | **Tokenization** | /payment-methods endpoint | card-new message type |
 | **Recurring** | stored_credential object | \<recurring\> XML element |
 
+---
+
 ## Additional Resources
 
 - [Payment Scheduler Documentation](https://developer.globalpayments.com/api/references-overview)
@@ -407,12 +431,16 @@ This implementation was migrated from the GP-API (REST) reference. Key differenc
 - [Card Storage API](https://developer.globalpayments.com/api/references-overview)
 - [XML API Authentication](https://developer.globalpayments.com/api/references-overview)
 
+---
+
 ## Support
 
 For technical support with Global Payments XML API:
 - Email: [developer support email]
 - Documentation: https://developer.globalpayments.com
 - Sandbox Testing: Use your test credentials from the developer portal
+
+---
 
 ## License
 
