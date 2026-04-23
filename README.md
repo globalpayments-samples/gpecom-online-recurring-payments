@@ -381,6 +381,27 @@ The `.env` file is missing or not loaded. Confirm the file exists in the languag
 **Port already in use**
 Check with `lsof -i :8003` (or the relevant port) and stop the conflicting process, or update the port mapping in `docker-compose.yml`.
 
+## Features
+
+- Process one-time payments via the GP Ecommerce XML API
+- Store cards in the GP Ecommerce Card Storage vault for recurring billing
+- Set up automated billing schedules with the Payment Scheduler service
+- Optional Hosted Payment Page (HPP) flow for PCI-compliant card collection
+- 4-language implementations (PHP, Node.js, .NET, Java)
+- Docker support with per-language containers
+
+## Security Considerations
+
+- Store credentials in `.env` files, never commit to source control
+- Card data is stored via GP Ecommerce's Card Storage vault (PCI-compliant)
+- The shared secret is never sent to the client
+- Use HTTPS in production
+
+## Resources
+
+- [Global Payments Developer Portal](https://developer.globalpayments.com/)
+- [GP-API Reference](https://developer.globalpayments.com/api/references-overview)
+
 ## Community
 
 - 🌐 **Developer Portal** — [developer.globalpayments.com](https://developer.globalpayments.com)
