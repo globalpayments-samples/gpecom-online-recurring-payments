@@ -74,7 +74,7 @@ Each future recurring charge references `payerRef` + `cardRef` — no card data 
 - Global Payments GP Ecom account — contact [Global Payments](https://developer.globalpayments.com) for XML API credentials
 - GP Ecom credentials: `Merchant ID`, `Shared Secret`, and `Account` (usually `internet`)
 - A local runtime for your chosen language:
-  - PHP 8.0+ with Composer
+  - PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ with Composer
   - Node.js 18+ with npm
   - .NET 8.0 SDK
   - Java 17+ with Maven
@@ -110,10 +110,9 @@ ENVIRONMENT=sandbox
 
 **PHP:**
 ```bash
-composer install
-php -S localhost:8003
+./run.sh
 ```
-Open: http://localhost:8003
+Open the local URL printed by the PHP server.
 
 **Node.js:**
 ```bash

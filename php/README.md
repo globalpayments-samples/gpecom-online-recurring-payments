@@ -8,7 +8,7 @@ Part of the [gpecom-online-recurring-payments](../) multi-language project.
 
 ## Requirements
 
-- PHP 8.0+
+- PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ for the web server
 - Composer
 - Global Payments GP Ecom credentials (`MERCHANT_ID`, `SHARED_SECRET`, `ACCOUNT`)
 
@@ -59,7 +59,7 @@ composer install
 Start the server:
 
 ```bash
-php -S localhost:8003
+PORT=8003 ./run.sh
 # or
 ./run.sh
 ```
@@ -258,7 +258,7 @@ Card Storage must be enabled on your Merchant ID. Contact your account manager f
 Run `composer install` — vendor autoloader not generated yet.
 
 **PHP version mismatch**
-Requires PHP 8.0+. Check with `php -v`. Use the Docker container if local PHP is older.
+Requires PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ for the web server. Check with `php -v` or use the Docker container.
 
 **Port 8003 already in use**
 Check with `lsof -i :8003` and stop the conflicting process, or change the port in `run.sh`.
