@@ -80,47 +80,50 @@ function setDefaultStartDate() {
  * Global Payments Test Cards
  * Source: https://developer.globalpay.com/test-cards
  */
+// Test cards need an expiry date that hasn't passed yet
+const testCardExpiry = '12/' + String(new Date().getFullYear() + 3).slice(-2);
+
 const testCards = [
     {
         name: 'Visa - Approved',
         number: '4263970000005262',
         cvv: '123',
-        expiry: '12/25',
+        expiry: testCardExpiry,
         type: 'visa'
     },
     {
         name: 'Visa - Declined',
         number: '4000120000001154',
         cvv: '123',
-        expiry: '12/25',
+        expiry: testCardExpiry,
         type: 'visa'
     },
     {
         name: 'Mastercard - Approved',
         number: '5425230000004415',
         cvv: '123',
-        expiry: '12/25',
+        expiry: testCardExpiry,
         type: 'mastercard'
     },
     {
         name: 'Mastercard - Declined',
         number: '5114610000004778',
         cvv: '123',
-        expiry: '12/25',
+        expiry: testCardExpiry,
         type: 'mastercard'
     },
     {
         name: 'Amex - Approved',
         number: '374101000000608',
         cvv: '1234',
-        expiry: '12/25',
+        expiry: testCardExpiry,
         type: 'amex'
     },
     {
         name: 'Discover - Approved',
         number: '6011000000000087',
         cvv: '123',
-        expiry: '12/25',
+        expiry: testCardExpiry,
         type: 'discover'
     }
 ];

@@ -58,7 +58,7 @@ async function testOneTimePayment() {
         const testCardData = {
             number: '4012001037141112',  // Visa test card
             expmonth: '12',
-            expyear: '25',
+            expyear: String(new Date().getFullYear() + 3).slice(-2),
             cvn: '123',
             chname: 'John Doe',
             type: 'VISA'
@@ -101,7 +101,7 @@ async function testRecurringPayment() {
         const testCardData = {
             number: '4012001037141112',  // Visa test card
             expmonth: '12',
-            expyear: '25',
+            expyear: String(new Date().getFullYear() + 3).slice(-2),
             cvn: '123',
             type: 'VISA'
         };

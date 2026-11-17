@@ -168,24 +168,24 @@ curl -X POST http://localhost:8000/hpp-recurring-request \
 # Node /recurring-setup (Java and .NET use the same JSON shape at /recurring-setup)
 curl -X POST http://localhost:8000/recurring-setup \
   -H "Content-Type: application/json" \
-  -d '{"card_number":"4263970000005262","card_expiry":"12/25","card_cvv":"123","amount":29.99,"currency":"USD","frequency":"monthly","start_date":"2030-01-01","first_name":"John","last_name":"Smith","email":"john.smith@example.com","phone":"555-123-4567","street_address":"123 Main Street","city":"New York","state":"NY","billing_zip":"10001","billing_country":"840"}'
+  -d '{"card_number":"4263970000005262","card_expiry":"12/30","card_cvv":"123","amount":29.99,"currency":"USD","frequency":"monthly","start_date":"2030-01-01","first_name":"John","last_name":"Smith","email":"john.smith@example.com","phone":"555-123-4567","street_address":"123 Main Street","city":"New York","state":"NY","billing_zip":"10001","billing_country":"840"}'
 # Expected on success: {"success":true,"data":{"customer":{"payerRef":"CUS..."},"payment":{"transactionId":"..."},"schedule":{"scheduleRef":"..."}},...}
 
 # PHP /recurring-setup.php
 curl -X POST http://localhost:8000/recurring-setup.php \
   -H "Content-Type: application/json" \
-  -d '{"card_number":"4263970000005262","card_expiry":"12/25","card_cvv":"123","amount":29.99,"currency":"USD","frequency":"monthly","start_date":"2030-01-01","first_name":"John","last_name":"Smith","email":"john.smith@example.com","phone":"555-123-4567","street_address":"123 Main Street","city":"New York","state":"NY","billing_zip":"10001","billing_country":"840"}'
+  -d '{"card_number":"4263970000005262","card_expiry":"12/30","card_cvv":"123","amount":29.99,"currency":"USD","frequency":"monthly","start_date":"2030-01-01","first_name":"John","last_name":"Smith","email":"john.smith@example.com","phone":"555-123-4567","street_address":"123 Main Street","city":"New York","state":"NY","billing_zip":"10001","billing_country":"840"}'
 # Expected on success: {"success":true,"data":{"customer":{"payerRef":"CUS..."},"payment":{"transactionId":"..."},"schedule":{"scheduleRef":"..."}},...}
 
 # Node-only /process-payment
 curl -X POST http://localhost:8000/process-payment \
   -H "Content-Type: application/json" \
-  -d '{"payment_token":{"number":"4263970000005262","expmonth":"12","expyear":"25","cvn":"123","chname":"John Smith"},"amount":10.00,"currency":"USD"}'
+  -d '{"payment_token":{"number":"4263970000005262","expmonth":"12","expyear":"30","cvn":"123","chname":"John Smith"},"amount":10.00,"currency":"USD"}'
 # Expected on success: {"success":true,"data":{"transactionId":"...","orderId":"...","authCode":"..."},...}
 
 # PHP-only /process-payment.php (currently broken)
 curl -X POST http://localhost:8000/process-payment.php \
-  -F 'payment_token={"number":"4263970000005262","expmonth":"12","expyear":"25","cvn":"123","chname":"John Smith"}' \
+  -F 'payment_token={"number":"4263970000005262","expmonth":"12","expyear":"30","cvn":"123","chname":"John Smith"}' \
   -F 'amount=10.00' \
   -F 'currency=USD'
 # Expected today: server error because the file calls missing method PaymentUtils::processOneTimePayment().

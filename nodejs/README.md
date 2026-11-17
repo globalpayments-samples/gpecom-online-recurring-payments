@@ -181,7 +181,7 @@ Set up recurring payment with direct card details
 ```json
 {
   "card_number": "4263970000005262",
-  "card_expiry": "12/25",
+  "card_expiry": "12/30",
   "card_cvv": "123",
   "card_name": "John Doe",
   "amount": 29.99,
@@ -307,7 +307,7 @@ Use these test cards in the sandbox environment:
 | `5425230000004415` | Mastercard | Success |
 | `374101000000608` | Amex | Success |
 
-**Test Expiry:** Any future date (e.g., 12/25)
+**Test Expiry:** Any future date (e.g., 12/30)
 **Test CVV:** Any 3-4 digits (e.g., 123)
 
 ### Testing Recurring Payments
