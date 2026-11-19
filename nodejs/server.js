@@ -11,6 +11,7 @@
  */
 
 import express from 'express';
+import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
 import {
     processOneTimePayment,
@@ -34,7 +35,10 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8000;
 
-app.use(express.static('.')); // Serve static files (index.html, etc.)
+// Serve the page and its own assets only, not the server code, package files or .env
+const indexFile = fileURLToPath(new URL('./index.html', import.meta.url));
+app.get(['/', '/index.html'], (req, res) => res.sendFile(indexFile));
+app.get('/script.js', (req, res) => res.sendFile(fileURLToPath(new URL('./script.js', import.meta.url))));
 app.use(express.urlencoded({ extended: true })); // Parse form data
 app.use(express.json()); // Parse JSON requests
 
