@@ -148,7 +148,7 @@ try {
         $cardData = [
             'number' => $paymentToken,
             'expmonth' => '12',
-            'expyear' => '25',
+            'expyear' => substr((string) ((int) date('Y') + 3), -2),
             'cvn' => '123',
             'chname' => trim("$firstName $lastName") ?: 'Card Holder'
         ];

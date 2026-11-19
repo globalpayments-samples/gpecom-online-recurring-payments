@@ -53,7 +53,7 @@ export async function processOneTimePayment(config, paymentData) {
         let cardData = typeof token === 'object' ? token : {
             number: token,
             expmonth: '12',
-            expyear: '25',
+            expyear: String(new Date().getFullYear() + 3).slice(-2),
             cvn: '123',
             chname: `${customerData?.first_name || 'Card'} ${customerData?.last_name || 'Holder'}`
         };
