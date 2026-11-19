@@ -78,7 +78,7 @@ function setDefaultStartDate() {
 
 /**
  * Global Payments Test Cards
- * Source: https://developer.globalpay.com/test-cards
+ * Source: https://developer.globalpayments.com/resources/test-cards
  */
 const testCards = [
     {
