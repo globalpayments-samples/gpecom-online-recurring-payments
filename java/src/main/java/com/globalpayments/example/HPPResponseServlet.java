@@ -93,9 +93,10 @@ public class HPPResponseServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            // Keep the details in the server log, the page only gets a generic message
+            log("HPP response processing failed", e);
             renderErrorPage(response, "Error Processing Response", 
-                "An error occurred while processing the payment response: " + e.getMessage());
+                "An error occurred while processing the payment response. See the server log for details.");
         }
     }
 
