@@ -75,7 +75,7 @@ Each future recurring charge references `payerRef` + `cardRef` — no card data 
 - GP Ecom credentials: `Merchant ID`, `Shared Secret`, and `Account` (usually `internet`)
 - A local runtime for your chosen language:
   - PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ with Composer
-  - Node.js 18+ with npm
+  - Node.js 24+ with npm
   - .NET 10.0 SDK
   - Java 17+ with Maven
 

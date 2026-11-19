@@ -34,7 +34,7 @@ This implementation follows the XML API workflow:
 
 ## Requirements
 
-- Node.js 14.x or later
+- Node.js 24.x or later
 - npm
 - Global Payments XML API credentials (Merchant ID, Shared Secret, Account name)
 
