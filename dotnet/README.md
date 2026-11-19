@@ -8,7 +8,7 @@ Part of the [gpecom-online-recurring-payments](../) multi-language project.
 
 ## Requirements
 
-- .NET 8.0 SDK
+- .NET 10.0 SDK
 - Global Payments GP Ecom credentials (`MERCHANT_ID`, `SHARED_SECRET`, `ACCOUNT`)
 
 ---
@@ -260,4 +260,4 @@ Run `dotnet restore` to install NuGet packages before running.
 Override: `dotnet run --urls http://localhost:9000`. Update Docker port mapping accordingly.
 
 **.NET version mismatch**
-Requires .NET 8.0 SDK. Check with `dotnet --version`. Use the Docker container if local SDK is older.
+Requires .NET 10.0 SDK. Check with `dotnet --version`. Use the Docker container if local SDK is older.

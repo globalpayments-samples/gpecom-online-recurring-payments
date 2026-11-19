@@ -203,4 +203,4 @@ The recurring workflow is intended to stay aligned across all four implementatio
 - PHP: `globalpayments/php-sdk` ^13.1 is declared, but recurring XML requests are hand-built.
 - Java: `com.heartlandpaymentsystems:globalpayments-sdk` 14.2.20 is declared, but recurring XML requests are hand-built.
 - .NET: `GlobalPayments.Api` 9.0.16 is declared, but recurring XML requests are hand-built.
-- Runtime targets in repo: Node module app, PHP 8-style sample, Java source/target 23, and `.NET` target framework `net9.0`.
+- Runtime targets in repo: Node module app, PHP 8-style sample, Java source/target 23, and `.NET` target framework `net10.0`.
