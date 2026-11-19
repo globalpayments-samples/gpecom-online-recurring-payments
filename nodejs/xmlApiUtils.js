@@ -34,7 +34,7 @@ export function generateTimestamp() {
  */
 export function generateOrderId(prefix = 'ORD') {
     const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
+    const random = crypto.randomInt(1000);
     return `${prefix}_${timestamp}_${random}`;
 }
 
