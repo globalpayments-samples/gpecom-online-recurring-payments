@@ -12,6 +12,7 @@
 
 import express from 'express';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 import * as dotenv from 'dotenv';
 import {
     processOneTimePayment,
@@ -37,8 +38,10 @@ const port = process.env.PORT || 8000;
 
 // Serve the page and its own assets only, not the server code, package files or .env
 const indexFile = fileURLToPath(new URL('./index.html', import.meta.url));
-app.get(['/', '/index.html'], (req, res) => res.sendFile(indexFile));
-app.get('/script.js', (req, res) => res.sendFile(fileURLToPath(new URL('./script.js', import.meta.url))));
+const indexHtml = readFileSync(indexFile, 'utf8');
+app.get(['/', '/index.html'], (req, res) => res.type('html').send(indexHtml));
+const scriptJs = readFileSync(fileURLToPath(new URL('./script.js', import.meta.url)), 'utf8');
+app.get('/script.js', (req, res) => res.type('js').send(scriptJs));
 app.use(express.urlencoded({ extended: true })); // Parse form data
 app.use(express.json()); // Parse JSON requests
 
