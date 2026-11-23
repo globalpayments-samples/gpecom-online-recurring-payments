@@ -46,4 +46,4 @@ echo "============================================================"
 echo ""
 
 HOST="${HOST:-127.0.0.1}"
-exec php -S "$HOST:$PORT"
+exec php -S "$HOST:$PORT" router.php

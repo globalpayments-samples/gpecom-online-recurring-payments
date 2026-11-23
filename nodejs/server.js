@@ -11,6 +11,8 @@
  */
 
 import express from 'express';
+import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 import * as dotenv from 'dotenv';
 import {
     processOneTimePayment,
@@ -34,7 +36,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8000;
 
-app.use(express.static('.')); // Serve static files (index.html, etc.)
+// Serve the page and its own assets only, not the server code, package files or .env
+const indexFile = fileURLToPath(new URL('./index.html', import.meta.url));
+const indexHtml = readFileSync(indexFile, 'utf8');
+app.get(['/', '/index.html'], (req, res) => res.type('html').send(indexHtml));
+const scriptJs = readFileSync(fileURLToPath(new URL('./script.js', import.meta.url)), 'utf8');
+app.get('/script.js', (req, res) => res.type('js').send(scriptJs));
 app.use(express.urlencoded({ extended: true })); // Parse form data
 app.use(express.json()); // Parse JSON requests
 
@@ -376,6 +383,16 @@ app.post('/hpp-recurring-request', async (req, res) => {
     }
 });
 
+// Values from the HPP post and from errors go into HTML, so escape them first
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 /**
  * Process HPP response endpoint
  * Handles the response from the Hosted Payment Page
@@ -442,12 +459,12 @@ app.post('/hpp-response', async (req, res) => {
                 <body>
                     <h1 class="success">✅ Payment Successful</h1>
                     <div class="info">
-                        <p><strong>Order ID:</strong> ${ORDER_ID}</p>
-                        <p><strong>Transaction ID:</strong> ${PASREF}</p>
-                        <p><strong>Authorization Code:</strong> ${AUTHCODE}</p>
-                        <p><strong>Amount:</strong> ${response.AMOUNT} ${response.CURRENCY}</p>
+                        <p><strong>Order ID:</strong> ${escapeHtml(ORDER_ID)}</p>
+                        <p><strong>Transaction ID:</strong> ${escapeHtml(PASREF)}</p>
+                        <p><strong>Authorization Code:</strong> ${escapeHtml(AUTHCODE)}</p>
+                        <p><strong>Amount:</strong> ${escapeHtml(response.AMOUNT)} ${escapeHtml(response.CURRENCY)}</p>
                     </div>
-                    <p>${MESSAGE}</p>
+                    <p>${escapeHtml(MESSAGE)}</p>
                     <button onclick="window.close()">Close Window</button>
                 </body>
                 </html>
@@ -469,10 +486,10 @@ app.post('/hpp-response', async (req, res) => {
                 <body>
                     <h1 class="error">❌ Payment Failed</h1>
                     <div class="info">
-                        <p><strong>Order ID:</strong> ${ORDER_ID}</p>
-                        <p><strong>Error Code:</strong> ${RESULT}</p>
+                        <p><strong>Order ID:</strong> ${escapeHtml(ORDER_ID)}</p>
+                        <p><strong>Error Code:</strong> ${escapeHtml(RESULT)}</p>
                     </div>
-                    <p>${MESSAGE}</p>
+                    <p>${escapeHtml(MESSAGE)}</p>
                     <button onclick="window.close()">Close Window</button>
                 </body>
                 </html>
@@ -487,7 +504,7 @@ app.post('/hpp-response', async (req, res) => {
             <head><title>Error</title></head>
             <body>
                 <h1>Error Processing Payment Response</h1>
-                <p>${error.message}</p>
+                <p>${escapeHtml(error.message)}</p>
             </body>
             </html>
         `);
@@ -562,10 +579,10 @@ app.post('/hpp-recurring-response', async (req, res) => {
                 <body>
                     <h1 class="error">❌ Payment Failed</h1>
                     <div class="info">
-                        <p><strong>Order ID:</strong> ${ORDER_ID}</p>
-                        <p><strong>Error Code:</strong> ${RESULT}</p>
+                        <p><strong>Order ID:</strong> ${escapeHtml(ORDER_ID)}</p>
+                        <p><strong>Error Code:</strong> ${escapeHtml(RESULT)}</p>
                     </div>
-                    <p>${MESSAGE}</p>
+                    <p>${escapeHtml(MESSAGE)}</p>
                     <button onclick="window.history.back()">Go Back</button>
                 </body>
                 </html>
@@ -597,7 +614,7 @@ app.post('/hpp-recurring-response', async (req, res) => {
                 <body>
                     <h1>Card Not Saved</h1>
                     <p>The payment was successful but the card was not saved for recurring use. Please contact support.</p>
-                    <p><strong>Transaction ID:</strong> ${PASREF}</p>
+                    <p><strong>Transaction ID:</strong> ${escapeHtml(PASREF)}</p>
                 </body>
                 </html>
             `);
@@ -635,16 +652,16 @@ app.post('/hpp-recurring-response', async (req, res) => {
                     <h1 class="success">✅ Recurring Payment Setup Complete!</h1>
                     <div class="info">
                         <h3>Initial Payment</h3>
-                        <p><strong>Transaction ID:</strong> ${PASREF}</p>
-                        <p><strong>Authorization Code:</strong> ${AUTHCODE}</p>
-                        <p><strong>Amount:</strong> ${response.AMOUNT} ${response.CURRENCY}</p>
+                        <p><strong>Transaction ID:</strong> ${escapeHtml(PASREF)}</p>
+                        <p><strong>Authorization Code:</strong> ${escapeHtml(AUTHCODE)}</p>
+                        <p><strong>Amount:</strong> ${escapeHtml(response.AMOUNT)} ${escapeHtml(response.CURRENCY)}</p>
                     </div>
                     <div class="schedule">
                         <h3>Recurring Schedule</h3>
-                        <p><strong>Schedule ID:</strong> ${scheduleResult.scheduleRef}</p>
-                        <p><strong>Frequency:</strong> ${scheduleResult.scheduleText}</p>
-                        <p><strong>Start Date:</strong> ${startDate}</p>
-                        <p><strong>Customer ID:</strong> ${payerRef}</p>
+                        <p><strong>Schedule ID:</strong> ${escapeHtml(scheduleResult.scheduleRef)}</p>
+                        <p><strong>Frequency:</strong> ${escapeHtml(scheduleResult.scheduleText)}</p>
+                        <p><strong>Start Date:</strong> ${escapeHtml(startDate)}</p>
+                        <p><strong>Customer ID:</strong> ${escapeHtml(payerRef)}</p>
                     </div>
                     <p>Your recurring payment has been set up successfully. You will be charged automatically according to the schedule above.</p>
                     <button onclick="window.close()">Close Window</button>
@@ -661,8 +678,8 @@ app.post('/hpp-recurring-response', async (req, res) => {
                 <body>
                     <h1>Payment Successful, Schedule Failed</h1>
                     <p>Your payment was processed successfully, but we could not create the recurring schedule.</p>
-                    <p><strong>Transaction ID:</strong> ${PASREF}</p>
-                    <p><strong>Error:</strong> ${scheduleError.message}</p>
+                    <p><strong>Transaction ID:</strong> ${escapeHtml(PASREF)}</p>
+                    <p><strong>Error:</strong> ${escapeHtml(scheduleError.message)}</p>
                     <p>Please contact support to complete your recurring payment setup.</p>
                 </body>
                 </html>
@@ -677,7 +694,7 @@ app.post('/hpp-recurring-response', async (req, res) => {
             <head><title>Error</title></head>
             <body>
                 <h1>Error Processing Recurring Payment Response</h1>
-                <p>${error.message}</p>
+                <p>${escapeHtml(error.message)}</p>
             </body>
             </html>
         `);

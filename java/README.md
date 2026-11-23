@@ -8,7 +8,7 @@ Part of the [gpecom-online-recurring-payments](../) multi-language project.
 
 ## Requirements
 
-- Java 17+
+- Java 21+
 - Maven 3.8+
 - Global Payments GP Ecom credentials (`MERCHANT_ID`, `SHARED_SECRET`, `ACCOUNT`)
 
@@ -252,7 +252,7 @@ Card Storage must be enabled on your Merchant ID. Contact your account manager f
 Run `mvn clean package` to download all dependencies before `mvn cargo:run`.
 
 **Java version mismatch**
-Requires Java 17+. Check with `java -version`. Use the Docker container if local JDK is older.
+Requires Java 21+. Check with `java -version`. Use the Docker container if local JDK is older.
 
 **Maven version mismatch**
 Requires Maven 3.8+. Check with `mvn -version`.
