@@ -339,6 +339,10 @@ export function mapFrequencyToSchedule(frequency) {
  * @returns {string} Formatted date (YYYYMMDD)
  */
 export function formatStartDate(date) {
+    // A YYYY-MM-DD string is a calendar date, so don't let the time zone move it
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return date.replace(/-/g, '');
+    }
     const d = typeof date === 'string' ? new Date(date) : date;
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');

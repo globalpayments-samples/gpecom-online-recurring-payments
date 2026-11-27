@@ -528,6 +528,7 @@ export async function createRecurringSchedule(config, scheduleData) {
         requestData.scheduleref = scheduleRef;
         requestData.transtype = 'auth';
         requestData.schedule = schedule;
+        requestData.startdate = formattedStartDate;
         requestData.numtimes = numTimes;  // REQUIRED field
         requestData.payerref = payerRef;
         requestData.paymentmethod = paymentMethodRef;
