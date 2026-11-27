@@ -59,7 +59,7 @@ dotnet run
 ./run.sh
 ```
 
-Open: http://localhost:8006
+Open: http://localhost:8000 (set PORT in `.env` to change it)
 
 ---
 
