@@ -119,12 +119,18 @@ try {
     $requestBody = file_get_contents('php://input');
     $jsonRequest = json_decode($requestBody, true);
 
-    if ($jsonRequest === null) {
-        throw new Exception('Invalid request body - must be valid JSON');
+    if (!is_array($jsonRequest)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid request body - must be valid JSON',
+            'error' => ['code' => 'INVALID_REQUEST', 'details' => 'Request body must be valid JSON']
+        ]);
+        exit;
     }
 
     // Extract request parameters
-    $amount = isset($jsonRequest['amount']) ? floatval($jsonRequest['amount']) : 0;
+    $amount = isset($jsonRequest['amount']) && is_numeric($jsonRequest['amount']) ? floatval($jsonRequest['amount']) : 0;
     $currency = $jsonRequest['currency'] ?? 'USD';
     $customerEmail = $jsonRequest['customer_email'] ?? null;
     $customerPhone = $jsonRequest['customer_phone'] ?? null;
@@ -137,7 +143,13 @@ try {
 
     // Validate required fields
     if ($amount <= 0) {
-        throw new Exception('Valid amount is required');
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Valid amount is required',
+            'error' => ['code' => 'INVALID_AMOUNT', 'details' => 'Valid amount is required']
+        ]);
+        exit;
     }
 
     // Generate request parameters
