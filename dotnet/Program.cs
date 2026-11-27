@@ -115,8 +115,9 @@ public class Program
                     });
                 }
 
-                var amount = jsonRequest["amount"].GetDecimal();
-                if (amount <= 0)
+                var amountElement = jsonRequest["amount"];
+                if (amountElement.ValueKind != System.Text.Json.JsonValueKind.Number ||
+                    !amountElement.TryGetDecimal(out var amount) || amount <= 0)
                 {
                     return Results.BadRequest(new {
                         success = false,
@@ -401,6 +402,20 @@ public class Program
                         error = new {
                             code = "MISSING_RECURRING_INFO",
                             details = "Amount, frequency, and start date are required"
+                        }
+                    });
+                }
+
+                var recurringAmount = jsonRequest["amount"];
+                if (recurringAmount.ValueKind != System.Text.Json.JsonValueKind.Number ||
+                    !recurringAmount.TryGetDecimal(out var recurringAmountValue) || recurringAmountValue <= 0)
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Valid amount is required",
+                        error = new {
+                            code = "INVALID_AMOUNT",
+                            details = "Amount must be a number greater than zero"
                         }
                     });
                 }
