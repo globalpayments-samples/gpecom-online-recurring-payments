@@ -175,7 +175,7 @@ app.post('/hpp-request', async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!amount || amount <= 0) {
+        if (!(Number(amount) > 0)) {
             return sendErrorResponse(res, 400, 'Valid amount is required', 'INVALID_AMOUNT');
         }
 
@@ -274,7 +274,7 @@ app.post('/hpp-recurring-request', async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!amount || amount <= 0) {
+        if (!(Number(amount) > 0)) {
             return sendErrorResponse(res, 400, 'Valid amount is required', 'INVALID_AMOUNT');
         }
 
@@ -747,7 +747,7 @@ app.post('/recurring-setup', async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!amount || amount <= 0) {
+        if (!(Number(amount) > 0)) {
             return sendErrorResponse(res, 400, 'Valid amount is required', 'INVALID_AMOUNT');
         }
 
@@ -869,7 +869,7 @@ app.post('/process-payment', async (req, res) => {
             return sendErrorResponse(res, 400, 'Payment token is required', 'MISSING_TOKEN');
         }
 
-        if (!amount || amount <= 0) {
+        if (!(Number(amount) > 0)) {
             return sendErrorResponse(res, 400, 'Valid amount is required', 'INVALID_AMOUNT');
         }
 
