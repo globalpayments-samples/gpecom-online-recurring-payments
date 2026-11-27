@@ -58,7 +58,7 @@ mvn cargo:run
 ./run.sh
 ```
 
-Open: http://localhost:8004
+Open: http://localhost:8000
 
 ---
 
