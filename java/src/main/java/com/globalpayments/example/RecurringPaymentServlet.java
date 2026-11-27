@@ -75,6 +75,12 @@ public class RecurringPaymentServlet extends HttpServlet {
                 return;
             }
 
+            if (!jsonRequest.get("start_date").isJsonPrimitive()
+                    || !jsonRequest.get("start_date").getAsString().matches("\\d{4}-\\d{2}-\\d{2}")) {
+                sendErrorResponse(response, 400, "Start date must be YYYY-MM-DD", "INVALID_START_DATE");
+                return;
+            }
+
             if (!jsonRequest.has("first_name") || !jsonRequest.has("last_name") || !jsonRequest.has("email")) {
                 sendErrorResponse(response, 400, "Customer information required", "MISSING_CUSTOMER_INFO");
                 return;
