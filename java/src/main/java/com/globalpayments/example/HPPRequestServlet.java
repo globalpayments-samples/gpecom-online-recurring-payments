@@ -67,7 +67,10 @@ public class HPPRequestServlet extends HttpServlet {
                 return;
             }
 
-            double amount = jsonRequest.get("amount").getAsDouble();
+            double amount = 0;
+            if (jsonRequest.get("amount").isJsonPrimitive() && jsonRequest.get("amount").getAsJsonPrimitive().isNumber()) {
+                amount = jsonRequest.get("amount").getAsDouble();
+            }
             if (amount <= 0) {
                 sendErrorResponse(response, 400, "Valid amount is required", "INVALID_AMOUNT");
                 return;
