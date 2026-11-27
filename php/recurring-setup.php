@@ -85,6 +85,19 @@ try {
         exit;
     }
 
+    if (!is_string($jsonRequest['start_date']) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $jsonRequest['start_date'])) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Start date must be YYYY-MM-DD',
+            'error' => [
+                'code' => 'INVALID_START_DATE',
+                'details' => 'Start date must be YYYY-MM-DD'
+            ]
+        ]);
+        exit;
+    }
+
     // Validate required customer fields
     if (!isset($jsonRequest['first_name']) || !isset($jsonRequest['last_name']) || !isset($jsonRequest['email'])) {
         http_response_code(400);
