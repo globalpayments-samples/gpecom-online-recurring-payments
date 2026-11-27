@@ -420,6 +420,20 @@ public class Program
                     });
                 }
 
+                var startDateElement = jsonRequest["start_date"];
+                if (startDateElement.ValueKind != System.Text.Json.JsonValueKind.String ||
+                    !System.Text.RegularExpressions.Regex.IsMatch(startDateElement.GetString() ?? "", @"^\d{4}-\d{2}-\d{2}$"))
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Start date must be YYYY-MM-DD",
+                        error = new {
+                            code = "INVALID_START_DATE",
+                            details = "Start date must be YYYY-MM-DD"
+                        }
+                    });
+                }
+
                 // Validate required customer fields
                 if (!jsonRequest.ContainsKey("first_name") || !jsonRequest.ContainsKey("last_name") || !jsonRequest.ContainsKey("email"))
                 {
