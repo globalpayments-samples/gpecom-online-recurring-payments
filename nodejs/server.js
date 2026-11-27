@@ -759,6 +759,10 @@ app.post('/recurring-setup', async (req, res) => {
             return sendErrorResponse(res, 400, 'Start date is required', 'MISSING_START_DATE');
         }
 
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date)) {
+            return sendErrorResponse(res, 400, 'Start date must be YYYY-MM-DD', 'INVALID_START_DATE');
+        }
+
         if (!first_name || !last_name || !email) {
             return sendErrorResponse(res, 400, 'Customer information (first_name, last_name, email) is required', 'MISSING_CUSTOMER_INFO');
         }
