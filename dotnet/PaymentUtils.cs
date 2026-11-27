@@ -320,6 +320,7 @@ public static class PaymentUtils
             new XElement("scheduleref", scheduleRef),
             new XElement("transtype", "auth"),
             new XElement("schedule", schedule),
+            new XElement("startdate", startDate.Replace("-", "")),
             new XElement("numtimes", numTimes),
             new XElement("payerref", payerRef),
             new XElement("paymentmethod", paymentMethodRef),
