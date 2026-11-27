@@ -280,8 +280,8 @@ public class PaymentUtils {
         String hashVal = XmlApiUtils.generateScheduleHash(hashParams, sharedSecret);
 
         // Build XML request
-        String xmlRequest = buildScheduleNewXml(timestamp, merchantId, account, scheduleRef, schedule, numTimes,
-                payerRef, paymentMethodRef, amountInCents, currency, hashVal);
+        String xmlRequest = buildScheduleNewXml(timestamp, merchantId, account, scheduleRef, schedule, startDate.replace("-", ""),
+                numTimes, payerRef, paymentMethodRef, amountInCents, currency, hashVal);
 
         String endpoint = XmlApiUtils.getXmlApiEndpoint(environment);
 
@@ -520,7 +520,7 @@ public class PaymentUtils {
     }
 
     private static String buildScheduleNewXml(String timestamp, String merchantId, String account,
-                                              String scheduleRef, String schedule, int numTimes,
+                                              String scheduleRef, String schedule, String startDate, int numTimes,
                                               String payerRef, String paymentMethod, int amount,
                                               String currency, String hash) {
         StringBuilder xml = new StringBuilder();
@@ -530,6 +530,7 @@ public class PaymentUtils {
         xml.append("<scheduleref>").append(scheduleRef).append("</scheduleref>");
         xml.append("<transtype>auth</transtype>");
         xml.append("<schedule>").append(schedule).append("</schedule>");
+        xml.append("<startdate>").append(startDate).append("</startdate>");
         xml.append("<numtimes>").append(numTimes).append("</numtimes>");
         xml.append("<payerref>").append(payerRef).append("</payerref>");
         xml.append("<paymentmethod>").append(paymentMethod).append("</paymentmethod>");
