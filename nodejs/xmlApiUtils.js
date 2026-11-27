@@ -150,9 +150,8 @@ export function generateCardNewHash(params, sharedSecret) {
  * Generate authentication hash for Hosted Payment Page (HPP) requests
  * Hash blueprint: timestamp.merchantid.orderid.amount.currency
  *
- * Note: The HPP hash does NOT include PAYER_REF or other card storage parameters.
- * Those are separate fields in the HPP request, but not part of the hash calculation.
- * According to Global Payments HPP documentation, the hash is always the same 5 fields.
+ * The hash is timestamp.merchantid.orderid.amount.currency, and a card storage
+ * request (PAYER_REF and PMT_REF) adds .payerref.pmtref to it.
  *
  * @param {Object} params - Request parameters
  * @param {string} params.timestamp - Request timestamp
@@ -160,15 +159,18 @@ export function generateCardNewHash(params, sharedSecret) {
  * @param {string} params.orderId - Order ID
  * @param {string} params.amount - Amount in smallest currency unit
  * @param {string} params.currency - Currency code
+ * @param {string} [params.payerRef] - Payer reference for card storage
+ * @param {string} [params.paymentRef] - Payment method reference for card storage
  * @param {string} sharedSecret - Merchant shared secret
  * @returns {string} Authentication hash
  */
 export function generateHPPHash(params, sharedSecret) {
-    const { timestamp, merchantId, orderId, amount, currency } = params;
+    const { timestamp, merchantId, orderId, amount, currency, payerRef, paymentRef } = params;
 
-    // HPP hash is ALWAYS: timestamp.merchantid.orderid.amount.currency
-    // Even when using OFFER_SAVE_CARD and PAYER_REF, they are NOT included in the hash
-    const dataString = `${timestamp}.${merchantId}.${orderId}.${amount}.${currency}`;
+    let dataString = `${timestamp}.${merchantId}.${orderId}.${amount}.${currency}`;
+    if (payerRef !== undefined) {
+        dataString += `.${payerRef}.${paymentRef || ''}`;
+    }
 
     return generateSHA1Hash(dataString, sharedSecret);
 }
