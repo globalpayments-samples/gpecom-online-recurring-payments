@@ -296,13 +296,15 @@ app.post('/hpp-recurring-request', async (req, res) => {
         const payerRef = `CUS${timestampMs.substring(timestampMs.length - 10)}`;
         const paymentRef = `PMT${timestampMs.substring(timestampMs.length - 10)}`;
 
-        // Generate hash (HPP hash does NOT include payerRef - it's always just these 5 fields)
+        // A card storage request signs the payer and payment refs as well
         const hash = generateHPPHash({
             timestamp,
             merchantId: config.merchantId,
             orderId,
             amount: amountInCents,
-            currency
+            currency,
+            payerRef,
+            paymentRef
         }, config.sharedSecret);
 
         // Build HPP request with card storage parameters
@@ -324,7 +326,6 @@ app.post('/hpp-recurring-request', async (req, res) => {
             PAYER_REF: payerRef,
             PMT_REF: paymentRef,
             PAYER_EXIST: '0',  // New payer
-            VALIDATE_CARD_ONLY: '0',  // Process initial payment
 
             // Add recurring metadata as supplementary data
             HPP_SUPPLEMENTARY_DATA: JSON.stringify({
