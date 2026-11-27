@@ -75,6 +75,12 @@ public class RecurringPaymentServlet extends HttpServlet {
                 return;
             }
 
+            if (!jsonRequest.get("amount").isJsonPrimitive() || !jsonRequest.get("amount").getAsJsonPrimitive().isNumber()
+                    || jsonRequest.get("amount").getAsDouble() <= 0) {
+                sendErrorResponse(response, 400, "Valid amount is required", "INVALID_AMOUNT");
+                return;
+            }
+
             if (!jsonRequest.has("first_name") || !jsonRequest.has("last_name") || !jsonRequest.has("email")) {
                 sendErrorResponse(response, 400, "Customer information required", "MISSING_CUSTOMER_INFO");
                 return;
