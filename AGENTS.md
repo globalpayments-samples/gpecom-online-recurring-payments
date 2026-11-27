@@ -8,6 +8,7 @@
 2. **Keep HPP hash inputs narrow.** `generateHPPHash()` in `nodejs/xmlApiUtils.js`, `php/hpp-request.php`, `java/src/main/java/com/globalpayments/xmlapi/XmlApiUtils.java`, and `dotnet/XmlApiUtils.cs` signs only `timestamp.merchantid.orderid.amount.currency`. Node's `server.js` adds recurring-only fields like `PAYER_REF`, `PMT_REF`, and `HPP_SUPPLEMENTARY_DATA`, but those fields are intentionally excluded from the hash.
 3. **Convert country formats at the XML boundary.** The browser scripts submit numeric ISO country codes such as `840`; `convertCountryCodeToAlpha2()` in every XML helper converts them to alpha-2 codes before `payer-new` or `receipt-in` requests. If you reuse HPP country values directly in XML, address verification can fail silently.
 4. **Node schedule requests depend on element order.** `createRecurringSchedule()` in `nodejs/paymentUtils.js` builds `schedule-new` in schema order and leaves `sha1hash` last. If you refactor that object shape casually, GP Ecom rejects the request even when the hash is correct.
+5. **Only weekly, monthly, quarterly and yearly (or annually) are schedules.** Every `/recurring-setup` validates the frequency before `payer-new` and answers 400 `INVALID_FREQUENCY` for anything else. Do not add a bi-weekly option: GP's scheduler answers 537 "The schedule expression is not valid" to biweekly, bi-weekly and fortnightly, and the cron `? * 6` the Node version used to send repeats every week, so it billed weekly.
 
 ## Repository Structure
 

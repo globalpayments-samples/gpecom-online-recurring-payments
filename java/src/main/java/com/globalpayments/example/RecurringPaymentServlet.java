@@ -1,6 +1,7 @@
 package com.globalpayments.example;
 
 import com.globalpayments.payment.PaymentUtils;
+import com.globalpayments.xmlapi.XmlApiUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -78,6 +79,12 @@ public class RecurringPaymentServlet extends HttpServlet {
             if (!jsonRequest.get("amount").isJsonPrimitive() || !jsonRequest.get("amount").getAsJsonPrimitive().isNumber()
                     || jsonRequest.get("amount").getAsDouble() <= 0) {
                 sendErrorResponse(response, 400, "Valid amount is required", "INVALID_AMOUNT");
+                return;
+            }
+
+            if (!jsonRequest.get("frequency").isJsonPrimitive()
+                    || !XmlApiUtils.isSupportedFrequency(jsonRequest.get("frequency").getAsString())) {
+                sendErrorResponse(response, 400, "Invalid frequency. Must be one of: weekly, monthly, quarterly, yearly", "INVALID_FREQUENCY");
                 return;
             }
 

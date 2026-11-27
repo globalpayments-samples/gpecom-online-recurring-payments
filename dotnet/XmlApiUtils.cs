@@ -46,8 +46,6 @@ public static class XmlApiUtils
     private static readonly Dictionary<string, string> FrequencyMap = new()
     {
         { "weekly", "weekly" },
-        { "bi-weekly", "biweekly" },
-        { "biweekly", "biweekly" },
         { "monthly", "monthly" },
         { "quarterly", "quarterly" },
         { "yearly", "yearly" },
@@ -190,6 +188,14 @@ public static class XmlApiUtils
         // Remove any potentially problematic characters
         var sanitized = Regex.Replace(value, @"[^a-zA-Z0-9 .,@_-]", "");
         return sanitized.Length > maxLength ? sanitized[..maxLength] : sanitized;
+    }
+
+    /// <summary>
+    /// Check a frequency against the schedules GP's scheduler accepts
+    /// </summary>
+    public static bool IsSupportedFrequency(string? frequency)
+    {
+        return frequency != null && FrequencyMap.ContainsKey(frequency.ToLower());
     }
 
     /// <summary>

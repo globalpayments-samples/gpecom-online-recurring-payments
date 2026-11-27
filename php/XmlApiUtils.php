@@ -47,8 +47,6 @@ class XmlApiUtils
 
     private const FREQUENCY_MAP = [
         'weekly' => 'weekly',
-        'bi-weekly' => 'biweekly',
-        'biweekly' => 'biweekly',
         'monthly' => 'monthly',
         'quarterly' => 'quarterly',
         'yearly' => 'yearly',
@@ -194,6 +192,14 @@ class XmlApiUtils
         // Remove any potentially problematic characters
         $sanitized = preg_replace('/[^a-zA-Z0-9 .,@_-]/', '', $value);
         return substr($sanitized, 0, $maxLength);
+    }
+
+    /**
+     * Check a frequency against the schedules GP's scheduler accepts
+     */
+    public static function isSupportedFrequency($frequency): bool
+    {
+        return is_string($frequency) && isset(self::FREQUENCY_MAP[strtolower($frequency)]);
     }
 
     /**

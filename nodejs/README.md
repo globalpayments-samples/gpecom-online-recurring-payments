@@ -11,7 +11,7 @@ This Node.js application demonstrates recurring payment processing using the Glo
 - Client-side card tokenization (simplified for demo)
 - Customer and payment method storage using Card Storage API
 - StoredCredential implementation for recurring transactions
-- Multiple billing frequencies: Weekly, Bi-Weekly, Monthly, Quarterly, Yearly
+- Multiple billing frequencies: Weekly, Monthly, Quarterly, Yearly
 - Initial payment validation before schedule creation
 - Complete customer data collection (name, email, phone, address)
 
@@ -286,10 +286,11 @@ Supported billing frequencies:
 | Frontend Value | XML API Schedule | Description |
 |----------------|------------------|-------------|
 | `weekly` | `weekly` | Every week, same day |
-| `bi-weekly` | `? * 6` | Every Saturday (cron format) |
 | `monthly` | `monthly` | Same date each month |
 | `quarterly` | `quarterly` | Jan, Apr, Jul, Oct |
 | `yearly` | `yearly` | Once per year |
+
+Any other value gets a 400 `INVALID_FREQUENCY` before anything is charged. There is no bi-weekly option because GP's scheduler rejects bi-weekly schedules.
 
 See [xmlApiUtils.js:226-243](xmlApiUtils.js#L226-L243) for frequency mapping.
 

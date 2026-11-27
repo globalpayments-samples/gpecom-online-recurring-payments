@@ -41,7 +41,7 @@ echo "  ✓ Recurring/subscription payments"
 echo "  ✓ Customer and payment method storage"
 echo "  ✓ Payment Scheduler integration"
 echo "  ✓ StoredCredential for recurring transactions"
-echo "  ✓ Multiple frequencies: weekly, bi-weekly, monthly, quarterly, yearly"
+echo "  ✓ Multiple frequencies: weekly, monthly, quarterly, yearly"
 echo "============================================================"
 echo ""
 

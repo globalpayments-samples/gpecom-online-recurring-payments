@@ -98,6 +98,19 @@ try {
         exit;
     }
 
+    if (!XmlApiUtils::isSupportedFrequency($jsonRequest['frequency'])) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid frequency. Must be one of: weekly, monthly, quarterly, yearly',
+            'error' => [
+                'code' => 'INVALID_FREQUENCY',
+                'details' => 'Invalid frequency. Must be one of: weekly, monthly, quarterly, yearly'
+            ]
+        ]);
+        exit;
+    }
+
     if (!is_string($jsonRequest['start_date']) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $jsonRequest['start_date'])) {
         http_response_code(400);
         echo json_encode([

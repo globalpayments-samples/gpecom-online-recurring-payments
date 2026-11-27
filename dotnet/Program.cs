@@ -61,7 +61,7 @@ public class Program
             Console.WriteLine("  ✓ Customer and payment method storage");
             Console.WriteLine("  ✓ Payment Scheduler integration");
             Console.WriteLine("  ✓ StoredCredential for recurring transactions");
-            Console.WriteLine("  ✓ Multiple frequencies: weekly, bi-weekly, monthly, quarterly, yearly");
+            Console.WriteLine("  ✓ Multiple frequencies: weekly, monthly, quarterly, yearly");
             Console.WriteLine("============================================================");
             Console.WriteLine("");
         });
@@ -416,6 +416,20 @@ public class Program
                         error = new {
                             code = "INVALID_AMOUNT",
                             details = "Amount must be a number greater than zero"
+                        }
+                    });
+                }
+
+                var frequencyElement = jsonRequest["frequency"];
+                if (frequencyElement.ValueKind != System.Text.Json.JsonValueKind.String ||
+                    !XmlApiUtils.IsSupportedFrequency(frequencyElement.GetString()))
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Invalid frequency. Must be one of: weekly, monthly, quarterly, yearly",
+                        error = new {
+                            code = "INVALID_FREQUENCY",
+                            details = "Invalid frequency. Must be one of: weekly, monthly, quarterly, yearly"
                         }
                     });
                 }

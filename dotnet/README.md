@@ -201,7 +201,9 @@ One-time card charge via the XML API.
 }
 ```
 
-Supported `frequency` values: `Weekly`, `Bi-Weekly`, `Monthly`, `Quarterly`, `Annually`
+Supported `frequency` values: `Weekly`, `Monthly`, `Quarterly`, `Annually`
+
+Any other value gets a 400 `INVALID_FREQUENCY` before anything is charged. There is no bi-weekly option because GP's scheduler rejects bi-weekly schedules.
 
 ---
 

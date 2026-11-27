@@ -7,7 +7,7 @@
  * - Recurring payment setup with Payment Scheduler
  * - Customer and payment method storage
  * - StoredCredential implementation for recurring transactions
- * - Support for multiple billing frequencies (weekly, bi-weekly, monthly, quarterly, yearly)
+ * - Support for multiple billing frequencies (weekly, monthly, quarterly, yearly)
  */
 
 import express from 'express';
@@ -24,7 +24,8 @@ import {
     generateOrderId,
     generateHPPHash,
     generateHPPResponseHash,
-    convertToCents
+    convertToCents,
+    isSupportedFrequency
 } from './xmlApiUtils.js';
 
 // Load environment variables from .env file
@@ -280,6 +281,10 @@ app.post('/hpp-recurring-request', async (req, res) => {
 
         if (!frequency) {
             return sendErrorResponse(res, 400, 'Frequency is required for recurring payments', 'INVALID_FREQUENCY');
+        }
+
+        if (!isSupportedFrequency(frequency)) {
+            return sendErrorResponse(res, 400, 'Invalid frequency. Must be one of: weekly, monthly, quarterly, yearly', 'INVALID_FREQUENCY');
         }
 
         if (!start_date) {
@@ -710,7 +715,7 @@ app.post('/hpp-recurring-response', async (req, res) => {
  * Request body parameters:
  * - amount (number, required): Payment amount in dollars
  * - currency (string, optional): Currency code (default: 'USD')
- * - frequency (string, required): Billing frequency (weekly, bi-weekly, monthly, quarterly, yearly)
+ * - frequency (string, required): Billing frequency (weekly, monthly, quarterly, yearly)
  * - start_date (string, required): Start date in ISO format (YYYY-MM-DD)
  * - first_name, last_name (string, required): Customer name
  * - email (string, required): Customer email
@@ -754,6 +759,10 @@ app.post('/recurring-setup', async (req, res) => {
 
         if (!frequency) {
             return sendErrorResponse(res, 400, 'Frequency is required', 'MISSING_FREQUENCY');
+        }
+
+        if (!isSupportedFrequency(frequency)) {
+            return sendErrorResponse(res, 400, 'Invalid frequency. Must be one of: weekly, monthly, quarterly, yearly', 'INVALID_FREQUENCY');
         }
 
         if (!start_date) {
@@ -839,7 +848,7 @@ app.post('/recurring-setup', async (req, res) => {
  * - is_recurring (boolean, optional): Whether this is a recurring payment setup
  *
  * For recurring payments, also required:
- * - frequency (string): 'weekly', 'bi-weekly', 'monthly', 'quarterly', 'yearly'
+ * - frequency (string): 'weekly', 'monthly', 'quarterly', 'yearly'
  * - start_date (string): Start date in ISO format
  * - first_name, last_name, email, phone (string): Customer information
  * - billing_zip, city, state, country (string): Address information
@@ -915,10 +924,8 @@ app.post('/process-payment', async (req, res) => {
                 return sendErrorResponse(res, 400, 'Customer information (first_name, last_name, email) is required for recurring payments', 'MISSING_CUSTOMER_INFO');
             }
 
-            // Validate frequency
-            const validFrequencies = ['weekly', 'bi-weekly', 'biweekly', 'monthly', 'quarterly', 'yearly', 'annually'];
-            if (!validFrequencies.includes(frequency.toLowerCase())) {
-                return sendErrorResponse(res, 400, `Invalid frequency. Must be one of: ${validFrequencies.join(', ')}`, 'INVALID_FREQUENCY');
+            if (!isSupportedFrequency(frequency)) {
+                return sendErrorResponse(res, 400, 'Invalid frequency. Must be one of: weekly, monthly, quarterly, yearly', 'INVALID_FREQUENCY');
             }
 
             console.log(`Processing recurring payment setup: ${frequency} starting ${start_date}`);
@@ -1014,7 +1021,7 @@ try {
         console.log('  ✓ Customer and payment method storage');
         console.log('  ✓ Payment Scheduler integration');
         console.log('  ✓ StoredCredential for recurring transactions');
-        console.log('  ✓ Multiple frequencies: weekly, bi-weekly, monthly, quarterly, yearly');
+        console.log('  ✓ Multiple frequencies: weekly, monthly, quarterly, yearly');
         console.log('='.repeat(60));
     });
 } catch (error) {

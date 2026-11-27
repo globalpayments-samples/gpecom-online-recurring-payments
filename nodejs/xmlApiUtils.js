@@ -312,24 +312,32 @@ export function buildXMLRequest(requestData) {
     return builder.buildObject({ request: requestData });
 }
 
+const FREQUENCY_SCHEDULES = {
+    'weekly': 'weekly',
+    'monthly': 'monthly',
+    'quarterly': 'quarterly',
+    'yearly': 'yearly',
+    'annually': 'yearly'
+};
+
+/**
+ * Check a frequency against the schedules GP's scheduler accepts
+ *
+ * @param {string} frequency - Frequency from the request
+ * @returns {boolean} True if it maps to a schedule
+ */
+export function isSupportedFrequency(frequency) {
+    return typeof frequency === 'string' && Object.hasOwn(FREQUENCY_SCHEDULES, frequency.toLowerCase());
+}
+
 /**
  * Map frequency string to XML API schedule format
  *
- * @param {string} frequency - Frequency (weekly, bi-weekly, monthly, quarterly, yearly)
+ * @param {string} frequency - Frequency (weekly, monthly, quarterly, yearly)
  * @returns {string} XML API schedule macro
  */
 export function mapFrequencyToSchedule(frequency) {
-    const frequencyMap = {
-        'weekly': 'weekly',
-        'bi-weekly': '? * 6',  // Every Saturday (cron format)
-        'biweekly': '? * 6',
-        'monthly': 'monthly',
-        'quarterly': 'quarterly',
-        'yearly': 'yearly',
-        'annually': 'yearly'
-    };
-
-    return frequencyMap[frequency.toLowerCase()] || 'monthly';
+    return FREQUENCY_SCHEDULES[frequency.toLowerCase()] || 'monthly';
 }
 
 /**

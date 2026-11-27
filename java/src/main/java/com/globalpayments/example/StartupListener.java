@@ -42,7 +42,7 @@ public class StartupListener implements ServletContextListener {
             System.out.println("  * Customer and payment method storage");
             System.out.println("  * Payment Scheduler integration");
             System.out.println("  * StoredCredential for recurring transactions");
-            System.out.println("  * Multiple frequencies: weekly, bi-weekly, monthly, quarterly, yearly");
+            System.out.println("  * Multiple frequencies: weekly, monthly, quarterly, yearly");
             System.out.println("============================================================");
             System.out.println("");
         } catch (Exception e) {

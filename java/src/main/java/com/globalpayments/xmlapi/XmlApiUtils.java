@@ -231,20 +231,26 @@ public class XmlApiUtils {
         return sanitizeAlphanumeric(value, 255);
     }
 
+    private static final Map<String, String> FREQUENCY_MAP = Map.of(
+        "weekly", "weekly",
+        "monthly", "monthly",
+        "quarterly", "quarterly",
+        "yearly", "yearly",
+        "annually", "yearly"
+    );
+
+    /**
+     * Check a frequency against the schedules GP's scheduler accepts
+     */
+    public static boolean isSupportedFrequency(String frequency) {
+        return frequency != null && FREQUENCY_MAP.containsKey(frequency.toLowerCase());
+    }
+
     /**
      * Map frequency to schedule format
      */
     public static String mapFrequencyToSchedule(String frequency) {
-        Map<String, String> frequencyMap = new HashMap<>();
-        frequencyMap.put("weekly", "weekly");
-        frequencyMap.put("bi-weekly", "biweekly");
-        frequencyMap.put("biweekly", "biweekly");
-        frequencyMap.put("monthly", "monthly");
-        frequencyMap.put("quarterly", "quarterly");
-        frequencyMap.put("yearly", "yearly");
-        frequencyMap.put("annually", "yearly");
-
-        return frequencyMap.getOrDefault(frequency.toLowerCase(), "monthly");
+        return FREQUENCY_MAP.getOrDefault(frequency.toLowerCase(), "monthly");
     }
 
     /**
