@@ -329,6 +329,7 @@ class PaymentUtils
         $xml->addChild('scheduleref', $scheduleRef);
         $xml->addChild('transtype', 'auth');
         $xml->addChild('schedule', $schedule);
+        $xml->addChild('startdate', str_replace('-', '', $startDate));
         $xml->addChild('numtimes', (string)$numTimes);
         $xml->addChild('payerref', $payerRef);
         $xml->addChild('paymentmethod', $paymentMethodRef);
