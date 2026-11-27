@@ -85,6 +85,19 @@ try {
         exit;
     }
 
+    if (!is_numeric($jsonRequest['amount']) || (float)$jsonRequest['amount'] <= 0) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Valid amount is required',
+            'error' => [
+                'code' => 'INVALID_AMOUNT',
+                'details' => 'Amount must be a number greater than zero'
+            ]
+        ]);
+        exit;
+    }
+
     // Validate required customer fields
     if (!isset($jsonRequest['first_name']) || !isset($jsonRequest['last_name']) || !isset($jsonRequest['email'])) {
         http_response_code(400);
